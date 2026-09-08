@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import '../models/task.dart';
 import '../utils/constants.dart';
+import '../data/dummy_tasks.dart';
 import '../widgets/filter_sort_bar.dart';
+import '../widgets/list_header.dart';
+import '../widgets/task_tile.dart';
 
 class TaskListScreen extends StatefulWidget {
   const TaskListScreen({super.key});
@@ -11,10 +15,16 @@ class TaskListScreen extends StatefulWidget {
 
 class _TaskListScreenState extends State<TaskListScreen> {
   final TextEditingController _searchController = TextEditingController();
-  
+
   TaskTag? _selectedTagFilter;
   Priority? _selectedPriorityFilter;
   String _selectedSortOption = 'Date added';
+
+  // --- Task data ---
+  // TEMPORARY: pulled from dummy_tasks.dart so we can preview the UI
+  // before Firebase is wired up. Will be replaced by a live
+  // Stream<List<Task>> from Firestore later.
+  late List<Task> _tasks = getDummyTasks();
 
   void _onTagChanged(TaskTag? tag) {
     setState(() => _selectedTagFilter = tag);
@@ -28,8 +38,21 @@ class _TaskListScreenState extends State<TaskListScreen> {
     setState(() => _selectedSortOption = sortOption ?? 'Date added');
   }
 
+  // Toggles a task's isDone state and updates the UI.
+  // Takes the task's id (not the whole object) so it's easy to call
+  // this from anywhere just by knowing which task was tapped.
+  void _toggleTaskDone(String taskId) {
+    setState(() {
+      final index = _tasks.indexWhere((t) => t.id == taskId);
+      _tasks[index] = _tasks[index].copyWith(isDone: !_tasks[index].isDone);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Count completed tasks for the ListHeader's "N completed" text.
+    final completedCount = _tasks.where((t) => t.isDone).length;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -42,7 +65,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _buildHeader(context),
-            
+
                   const SizedBox(height: 15),
                   FilterSortBar(
                     selectedTag: _selectedTagFilter,
@@ -52,16 +75,39 @@ class _TaskListScreenState extends State<TaskListScreen> {
                     onPriorityChanged: _onPriorityChanged,
                     onSortChanged: _onSortChanged,
                   ),
+                  const SizedBox(height: 15),
+
+                  // "Your list · N" / "N completed" — sits inside the
+                  // pinned section, right above the scrollable list.
+                  ListHeader(
+                    totalCount: _tasks.length,
+                    completedCount: completedCount,
+                  ),
                 ],
               ),
             ),
-            
+
             // Scrollable task area
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                children: const [
-                  // Task items will render here seamlessly without scrolling the whole header away
+                children: [
+                  // One TaskTile per task in _tasks.
+                  // .map() converts each Task -> TaskTile widget, and
+                  // .toList() turns that into a List<Widget> that
+                  // ListView's children can accept.
+                  ..._tasks.map(
+                    (task) => TaskTile(
+                      task: task,
+                      onToggleDone: () => _toggleTaskDone(task.id),
+                      onEdit: () {
+                        // TODO: navigate to Add/Edit Task screen
+                      },
+                      onDelete: () {
+                        // TODO: confirmation dialog + undo snackbar
+                      },
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -98,7 +144,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
         ),
         const SizedBox(height: 2),
         Text(
-          'Here are your tasks for today',
+          'Let\'s get things done!',
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: AppColors.subtext,
               ),
