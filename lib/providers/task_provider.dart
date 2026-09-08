@@ -84,3 +84,11 @@ class TaskProvider extends ChangeNotifier {
 
     return result;
   }
+
+
+  // Count of completed tasks, for the ListHeader.
+  int get completedCount => _allTasks.where((t) => t.isDone).length;
+
+  // Total task count (unfiltered — matches "Your list · N" in mockup,
+  // which counts ALL tasks, not just the filtered view).
+  int get totalCount => _allTasks.length;
