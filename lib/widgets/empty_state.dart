@@ -8,9 +8,9 @@ class EmptyState extends StatelessWidget {
 
   const EmptyState({
     super.key,
-    this.title = 'All clear for now',
+    this.title = 'Nothing brewing yet',
     this.subtitle =
-        'Take a breath, or tap below to capture your next priority and organize your day.',
+        'Take a sip, then tap + when you\'re ready to brew your next task.',
   });
 
   @override

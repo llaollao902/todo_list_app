@@ -109,11 +109,12 @@ class _TaskListScreenState extends State<TaskListScreen> {
             Expanded(
               child: _tasks.isEmpty
                   ? const Padding(
-                    padding:  EdgeInsets.symmetric(horizontal: 20),
-                    child: Center(
-                      child: EmptyState(),
-                    ),
-                  )
+                      padding: EdgeInsets.symmetric(horizontal: 25),
+                      child: Align(
+                        alignment: Alignment(0.0, -0.4),
+                        child: EmptyState(),
+                      ),
+                    )
       
                   : ListView(
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
