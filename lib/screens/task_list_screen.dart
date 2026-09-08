@@ -19,20 +19,18 @@ class TaskListScreen extends StatefulWidget {
 }
 
 class _TaskListScreenState extends State<TaskListScreen> {
-  TaskTag? _selectedTagFilter;
-  Priority? _selectedPriorityFilter;
-  String _selectedSortOption = 'Date added';
-
   void _onTagChanged(TaskTag? tag) {
-    setState(() => _selectedTagFilter = tag);
+    context.read<TaskProvider>().setTagFilter(tag);
   }
 
   void _onPriorityChanged(Priority? priority) {
-    setState(() => _selectedPriorityFilter = priority);
+    context.read<TaskProvider>().setPriorityFilter(priority);
   }
 
   void _onSortChanged(String? sortOption) {
-    setState(() => _selectedSortOption = sortOption ?? 'Date added');
+    if (sortOption != null) {
+      context.read<TaskProvider>().setSort(sortOption);
+    }
   }
 
   // Toggles a task's isDone state and updates the UI.
@@ -111,9 +109,9 @@ class _TaskListScreenState extends State<TaskListScreen> {
 
                   const SizedBox(height: 15),
                   FilterSortBar(
-                    selectedTag: _selectedTagFilter,
-                    selectedPriority: _selectedPriorityFilter,
-                    selectedSort: _selectedSortOption,
+                    selectedTag: provider.selectedTagFilter,
+                    selectedPriority: provider.selectedPriorityFilter,
+                    selectedSort: provider.selectedSort,
                     onTagChanged: _onTagChanged,
                     onPriorityChanged: _onPriorityChanged,
                     onSortChanged: _onSortChanged,
