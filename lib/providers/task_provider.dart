@@ -117,16 +117,33 @@ class TaskProvider extends ChangeNotifier {
   // the change round-trips through the database.
 
   Future<void> addTask(Task task) async {
-    
+    await _taskService.addTask(task);
   }
 
-  Future<void> updateTask(Task task) async {}
+  Future<void> updateTask(Task task) async {
+    await _taskService.updateTask(task);
+  }
+
+  // Toggles isDone for a given task.
+  Future<void> toggleTaskDone(Task task) async {
+    final updated = task.copyWith(isDone: !task.isDone);
+    await _taskService.updateTask(updated);
+  }
 
   // --- Delete with undo support ---
-  Future<void> deleteTask(Task task) async {}
+  Future<void> deleteTask(Task task) async {
+    // Remember what was deleted, in case the user taps Undo.
+    _recentlyDeletedTask = task;
+    await _taskService.deleteTask(task.id);
+  }
 
   // Called when the user taps "Undo" on the snackbar.
-  Future<void> undoDelete() async {}
+  Future<void> undoDelete() async {
+    if (_recentlyDeletedTask != null) {
+      await _taskService.restoreTask(_recentlyDeletedTask!);
+      _recentlyDeletedTask = null;
+    }
+  }
 
   // Always cancel stream subscriptions when the provider is disposed,
   // to avoid memory leaks / listening after the widget tree is gone.
