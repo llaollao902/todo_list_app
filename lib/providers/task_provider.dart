@@ -27,9 +27,11 @@ class TaskProvider extends ChangeNotifier {
   String selectedSort = 'Date added';
 
   // --- Undo-delete state ---
-  // When a task is deleted, we hold onto it here temporarily so the
-  // "Undo" snackbar can restore it if tapped in time.
+  // When a task is deleted, we keep it here temporarily so the
+  // "Undo" action can restore it before the final delete runs.
   Task? _recentlyDeletedTask;
+  Timer? _deleteUndoTimer;
+  static const Duration _deleteUndoDuration = Duration(seconds: 4);
 
   TaskProvider() {
     // Start listening to Firestore the moment this provider is created.
@@ -131,17 +133,33 @@ class TaskProvider extends ChangeNotifier {
   }
 
   // --- Delete with undo support ---
+  // The task is kept in a short grace period so the snackbar can still
+  // restore it before the permanent delete is executed.
   Future<void> deleteTask(Task task) async {
-    // Remember what was deleted, in case the user taps Undo.
+    _deleteUndoTimer?.cancel();
     _recentlyDeletedTask = task;
-    await _taskService.deleteTask(task.id);
+    notifyListeners();
+
+    _deleteUndoTimer = Timer(_deleteUndoDuration, () async {
+      if (_recentlyDeletedTask == null || _recentlyDeletedTask!.id != task.id) {
+        return;
+      }
+
+      await _taskService.deleteTask(task.id);
+      _recentlyDeletedTask = null;
+      notifyListeners();
+    });
   }
 
   // Called when the user taps "Undo" on the snackbar.
   Future<void> undoDelete() async {
+    _deleteUndoTimer?.cancel();
+
     if (_recentlyDeletedTask != null) {
-      await _taskService.restoreTask(_recentlyDeletedTask!);
+      final taskToRestore = _recentlyDeletedTask!;
       _recentlyDeletedTask = null;
+      notifyListeners();
+      await _taskService.restoreTask(taskToRestore);
     }
   }
 

@@ -9,6 +9,7 @@ import '../widgets/task_tile.dart';
 import 'form_task_screen.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/delete_confirm_dialog.dart';
+import '../widgets/undo_snackbar.dart';
 
 class TaskListScreen extends StatefulWidget {
   const TaskListScreen({super.key});
@@ -73,7 +74,20 @@ class _TaskListScreenState extends State<TaskListScreen> {
       return;
     }
 
-    await context.read<TaskProvider>().deleteTask(task);
+    final provider = context.read<TaskProvider>();
+    await provider.deleteTask(task);
+
+    if (!mounted) {
+      return;
+    }
+
+    // All the snackbar UI/config now lives in UndoSnackbar — this
+    // screen just decides WHEN to show it and WHAT happens on undo.
+    UndoSnackbar.show(
+      context,
+      message: '"${task.title}" deleted',
+      onUndo: () => provider.undoDelete(),
+    );
   }
 
   @override
