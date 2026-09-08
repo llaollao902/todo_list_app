@@ -60,15 +60,21 @@ class FilterSortBar extends StatelessWidget {
         // SORT dropdown
         Expanded(
           child: PillDropdown<String>(
-            hint: 'Date added',
-            value: selectedSort,
+            hint: 'Sort by',
+            value: selectedSort == 'Date added' ? null : selectedSort,
             items: const [
               DropdownMenuItem(value: 'Date added', child: Text('Date added')),
               DropdownMenuItem(value: 'Due date', child: Text('Due date')),
               DropdownMenuItem(value: 'Priority', child: Text('Priority')),
               DropdownMenuItem(value: 'Tag', child: Text('Tag')),
             ],
-            onChanged: onSortChanged,
+            onChanged: (value) {
+              if (value == null) {
+                onSortChanged('Date added');
+                return;
+              }
+              onSortChanged(value);
+            },
           ),
         ),
       ],
