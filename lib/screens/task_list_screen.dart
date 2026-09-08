@@ -87,6 +87,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
               ),
             ),
 
+
             // Scrollable task area
             Expanded(
               child: ListView(
@@ -114,6 +115,16 @@ class _TaskListScreenState extends State<TaskListScreen> {
           ],
         ),
       ),
+
+      // --- Floating action button to add a new task ---
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: AppColors.heading,
+        onPressed: () {
+          // TODO: navigate to Add Task screen
+        },
+        child: const Icon(Icons.add, color: Colors.white),
+      )
+
     );
   }
 
