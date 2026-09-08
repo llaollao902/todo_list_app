@@ -5,6 +5,7 @@ import '../data/dummy_tasks.dart';
 import '../widgets/filter_sort_bar.dart';
 import '../widgets/list_header.dart';
 import '../widgets/task_tile.dart';
+import 'form_task_screen.dart';
 
 class TaskListScreen extends StatefulWidget {
   const TaskListScreen({super.key});
@@ -46,6 +47,18 @@ class _TaskListScreenState extends State<TaskListScreen> {
       final index = _tasks.indexWhere((t) => t.id == taskId);
       _tasks[index] = _tasks[index].copyWith(isDone: !_tasks[index].isDone);
     });
+  }
+
+  /// Navigates to [AddEditTaskScreen] to create a new task.
+  Future<void> _addNewTask() async {
+    final newTask = await Navigator.push<Task>(
+      context,
+      MaterialPageRoute(builder: (_) => const AddEditTaskScreen()),
+    );
+
+    if (newTask != null && mounted) {
+      setState(() => _tasks.add(newTask));
+    }
   }
 
   @override
@@ -120,7 +133,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
       floatingActionButton: FloatingActionButton(
         backgroundColor: AppColors.heading,
         onPressed: () {
-          // TODO: navigate to Add Task screen
+          _addNewTask();
         },
         child: const Icon(Icons.add, color: Colors.white),
       )
