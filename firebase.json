@@ -1,1 +1,28 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"cmsc-128-labs","appId":"1:670779049709:android:bdb84ca5da58bdb398aee4","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"cmsc-128-labs","configurations":{"android":"1:670779049709:android:bdb84ca5da58bdb398aee4","web":"1:670779049709:web:d96ceffa2275a3ee98aee4"}}}}}}
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "cmsc-128-labs",
+          "appId": "1:670779049709:android:bdb84ca5da58bdb398aee4",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "cmsc-128-labs",
+          "configurations": {
+            "android": "1:670779049709:android:bdb84ca5da58bdb398aee4",
+            "web": "1:670779049709:web:d96ceffa2275a3ee98aee4"
+          }
+        }
+      }
+    }
+  },
+  "firestore": {
+    "database": "(default)",
+    "location": "asia-southeast1",
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  }
+}
