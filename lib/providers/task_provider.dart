@@ -163,6 +163,14 @@ class TaskProvider extends ChangeNotifier {
     }
   }
 
+  // Permanently deletes the task immediately, ignoring the undo window.
+  Future<void> forceDelete(Task task) async {
+    _deleteUndoTimer?.cancel();
+    _recentlyDeletedTask = null;
+    notifyListeners();
+    await _taskService.deleteTask(task.id);
+  }
+
   // Always cancel stream subscriptions when the provider is disposed,
   // to avoid memory leaks / listening after the widget tree is gone.
   @override

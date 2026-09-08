@@ -5,12 +5,14 @@ import 'package:flutter/material.dart';
 class UndoSnackbarContent extends StatelessWidget {
   final String message;
   final VoidCallback onUndo;
+  final VoidCallback onDelete;
   final Duration duration;
 
   const UndoSnackbarContent({
     super.key,
     required this.message,
     required this.onUndo,
+    required this.onDelete,
     required this.duration,
   });
 
@@ -23,7 +25,7 @@ class UndoSnackbarContent extends StatelessWidget {
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.25),
+            color: Colors.black.withValues(alpha: 0.25),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -47,18 +49,37 @@ class UndoSnackbarContent extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              TextButton(
-                onPressed: onUndo,
-                style: TextButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  backgroundColor: const Color(0xFF5C4B43),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  minimumSize: const Size(0, 30),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextButton(
+                    onPressed: onDelete,
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      backgroundColor: Colors.red.withValues(alpha: 0.18),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      minimumSize: const Size(0, 30),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text('Delete', style: TextStyle(fontWeight: FontWeight.w600)),
                   ),
-                ),
-                child: const Text('Undo', style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(width: 8),
+                  TextButton(
+                    onPressed: onUndo,
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      backgroundColor: const Color(0xFF5C4B43),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      minimumSize: const Size(0, 30),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text('Undo', style: TextStyle(fontWeight: FontWeight.w600)),
+                  ),
+                ],
               ),
             ],
           ),
@@ -73,7 +94,7 @@ class UndoSnackbarContent extends StatelessWidget {
                 return LinearProgressIndicator(
                   value: value,
                   minHeight: 3,
-                  backgroundColor: Colors.white.withOpacity(0.15),
+                  backgroundColor: Colors.white.withValues(alpha: 0.15),
                   valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFE0A64B)),
                 );
               },
@@ -95,6 +116,7 @@ class UndoSnackbar {
     BuildContext context, {
     required String message,
     required VoidCallback onUndo,
+    required VoidCallback onDelete,
     Duration duration = const Duration(seconds: 4),
   }) {
     // Remove any existing toast + cancel its pending auto-dismiss
@@ -123,6 +145,10 @@ class UndoSnackbar {
             duration: duration,
             onUndo: () {
               onUndo();
+              _removeCurrent();
+            },
+            onDelete: () {
+              onDelete();
               _removeCurrent();
             },
           ),

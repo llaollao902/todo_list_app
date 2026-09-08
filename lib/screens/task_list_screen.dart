@@ -85,6 +85,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
       context,
       message: '"${task.title}" deleted',
       onUndo: () => provider.undoDelete(),
+      onDelete: () => provider.forceDelete(task),
     );
   }
 
