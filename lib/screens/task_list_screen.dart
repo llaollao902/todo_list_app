@@ -6,6 +6,7 @@ import '../widgets/filter_sort_bar.dart';
 import '../widgets/list_header.dart';
 import '../widgets/task_tile.dart';
 import 'form_task_screen.dart';
+import '../widgets/empty_state.dart';
 
 class TaskListScreen extends StatefulWidget {
   const TaskListScreen({super.key});
@@ -45,7 +46,10 @@ class _TaskListScreenState extends State<TaskListScreen> {
   void _toggleTaskDone(String taskId) {
     setState(() {
       final index = _tasks.indexWhere((t) => t.id == taskId);
-      _tasks[index] = _tasks[index].copyWith(isDone: !_tasks[index].isDone);
+      
+      if (index != -1) {
+        _tasks[index] = _tasks[index].copyWith(isDone: !_tasks[index].isDone);
+      }
     });
   }
 
@@ -103,27 +107,29 @@ class _TaskListScreenState extends State<TaskListScreen> {
 
             // Scrollable task area
             Expanded(
-              child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                children: [
-                  // One TaskTile per task in _tasks.
-                  // .map() converts each Task -> TaskTile widget, and
-                  // .toList() turns that into a List<Widget> that
-                  // ListView's children can accept.
-                  ..._tasks.map(
-                    (task) => TaskTile(
-                      task: task,
-                      onToggleDone: () => _toggleTaskDone(task.id),
-                      onEdit: () {
-                        // TODO: navigate to Add/Edit Task screen
-                      },
-                      onDelete: () {
-                        // TODO: confirmation dialog + undo snackbar
-                      },
+              child: _tasks.isEmpty
+                  ? const Padding(
+                    padding:  EdgeInsets.symmetric(horizontal: 20),
+                    child: Center(
+                      child: EmptyState(),
                     ),
+                  )
+      
+                  : ListView(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                    children: _tasks.map(
+                      (task) => TaskTile(
+                        task: task,
+                        onToggleDone: () => _toggleTaskDone(task.id),
+                        onEdit: () {
+                          // TODO: navigate to Add/Edit Task screen
+                        },
+                        onDelete: () {
+                          // TODO: confirmation dialog + undo snackbar
+                        },
+                      ),
+                    ).toList(),
                   ),
-                ],
-              ),
             ),
           ],
         ),
