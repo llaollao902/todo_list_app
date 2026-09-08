@@ -8,6 +8,7 @@ import '../widgets/list_header.dart';
 import '../widgets/task_tile.dart';
 import 'form_task_screen.dart';
 import '../widgets/empty_state.dart';
+import '../widgets/delete_confirm_dialog.dart';
 
 class TaskListScreen extends StatefulWidget {
   const TaskListScreen({super.key});
@@ -52,6 +53,16 @@ class _TaskListScreenState extends State<TaskListScreen> {
     if (newTask != null && mounted) {
       await context.read<TaskProvider>().addTask(newTask);
     }
+  }
+
+  Future<void> _deleteTask(Task task) async {
+    final confirmed = await DeleteConfirmDialog.show(context, task.title);
+
+    if (!confirmed || !mounted) {
+      return;
+    }
+
+    await context.read<TaskProvider>().deleteTask(task);
   }
 
   @override
@@ -114,9 +125,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
                           onEdit: () {
                             // TODO: navigate to Add/Edit Task screen
                           },
-                          onDelete: () {
-                            // TODO: confirmation dialog + undo snackbar
-                          },
+                          onDelete: () => _deleteTask(task),
                         ),
                       ).toList(),
                     ),
