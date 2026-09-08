@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import '../utils/constants.dart';
 
-// A generic reusable "pill" styled dropdown.
+// reusable dropdown widget.
 class PillDropdown<T> extends StatelessWidget {
   final String hint;
   final T? value;
   final List<DropdownMenuItem<T>> items;
   final ValueChanged<T?> onChanged;
 
-// Creates a [PillDropdown] widget.
   const PillDropdown({
     super.key,
     required this.hint,
@@ -17,11 +16,10 @@ class PillDropdown<T> extends StatelessWidget {
     required this.onChanged,
   });
 
-// Builds the widget tree for the [PillDropdown].
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(20),
@@ -29,9 +27,16 @@ class PillDropdown<T> extends StatelessWidget {
       child: DropdownButtonHideUnderline(
         child: DropdownButton<T>(
           value: value,
-          hint: Text(hint, style: const TextStyle(fontSize: 13, color: AppColors.subtext)),
-          icon: const Icon(Icons.keyboard_arrow_down, size: 18, color: AppColors.subtext),
-          style: const TextStyle(fontSize: 13, color: AppColors.heading),
+          isExpanded: true, 
+          isDense: true,     
+          hint: Text(
+            hint,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 12, color: AppColors.subtext),
+          ),
+          icon: const Icon(Icons.keyboard_arrow_down, size: 16, color: AppColors.subtext),
+          style: const TextStyle(fontSize: 12, color: AppColors.heading),
           items: items,
           onChanged: onChanged,
         ),
