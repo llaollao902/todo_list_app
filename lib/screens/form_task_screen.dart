@@ -107,6 +107,7 @@ class _FormTaskScreenState extends State<FormTaskScreen> {
       id: widget.task?.id ?? _generatePlaceholderId(),
       title: _titleController.text.trim(),
       dueDateTime: _dueDateTime!,
+      createdAt: widget.task?.createdAt ?? DateTime.now(),
       priority: _priority,
       tag: _tag,
       isDone: widget.task?.isDone ?? false,
