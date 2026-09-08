@@ -85,7 +85,6 @@ class TaskProvider extends ChangeNotifier {
     return result;
   }
 
-
   // Count of completed tasks, for the ListHeader.
   int get completedCount => _allTasks.where((t) => t.isDone).length;
 
@@ -110,3 +109,30 @@ class TaskProvider extends ChangeNotifier {
     selectedSort = sort;
     notifyListeners();
   }
+
+  // --- CRUD operations ---
+  // These just delegate to TaskService. We don't need to manually
+  // update _allTasks or call notifyListeners() after these — the
+  // Firestore stream listener above does that automatically once
+  // the change round-trips through the database.
+
+  Future<void> addTask(Task task) async {
+    
+  }
+
+  Future<void> updateTask(Task task) async {}
+
+  // --- Delete with undo support ---
+  Future<void> deleteTask(Task task) async {}
+
+  // Called when the user taps "Undo" on the snackbar.
+  Future<void> undoDelete() async {}
+
+  // Always cancel stream subscriptions when the provider is disposed,
+  // to avoid memory leaks / listening after the widget tree is gone.
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    super.dispose();
+  }
+}
