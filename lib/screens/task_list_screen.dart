@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../models/task.dart';
+import '../providers/task_provider.dart';
 import '../utils/constants.dart';
-import '../data/dummy_tasks.dart';
 import '../widgets/filter_sort_bar.dart';
 import '../widgets/list_header.dart';
 import '../widgets/task_tile.dart';
@@ -16,17 +17,9 @@ class TaskListScreen extends StatefulWidget {
 }
 
 class _TaskListScreenState extends State<TaskListScreen> {
-  final TextEditingController _searchController = TextEditingController();
-
   TaskTag? _selectedTagFilter;
   Priority? _selectedPriorityFilter;
   String _selectedSortOption = 'Date added';
-
-  // --- Task data ---
-  // TEMPORARY: pulled from dummy_tasks.dart so we can preview the UI
-  // before Firebase is wired up. Will be replaced by a live
-  // Stream<List<Task>> from Firestore later.
-  late List<Task> _tasks = getDummyTasks();
 
   void _onTagChanged(TaskTag? tag) {
     setState(() => _selectedTagFilter = tag);
@@ -44,13 +37,9 @@ class _TaskListScreenState extends State<TaskListScreen> {
   // Takes the task's id (not the whole object) so it's easy to call
   // this from anywhere just by knowing which task was tapped.
   void _toggleTaskDone(String taskId) {
-    setState(() {
-      final index = _tasks.indexWhere((t) => t.id == taskId);
-      
-      if (index != -1) {
-        _tasks[index] = _tasks[index].copyWith(isDone: !_tasks[index].isDone);
-      }
-    });
+    final provider = context.read<TaskProvider>();
+    final task = provider.tasks.firstWhere((task) => task.id == taskId);
+    provider.toggleTaskDone(task);
   }
 
   /// Navigates to [FormTaskScreen] to create a new task.
@@ -61,14 +50,15 @@ class _TaskListScreenState extends State<TaskListScreen> {
     );
 
     if (newTask != null && mounted) {
-      setState(() => _tasks.add(newTask));
+      await context.read<TaskProvider>().addTask(newTask);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // Count completed tasks for the ListHeader's "N completed" text.
-    final completedCount = _tasks.where((t) => t.isDone).length;
+    final provider = context.watch<TaskProvider>();
+    final tasks = provider.tasks;
+    final completedCount = provider.completedCount;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -97,7 +87,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
                   // "Your list · N" / "N completed" — sits inside the
                   // pinned section, right above the scrollable list.
                   ListHeader(
-                    totalCount: _tasks.length,
+                    totalCount: tasks.length,
                     completedCount: completedCount,
                   ),
                 ],
@@ -107,7 +97,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
 
             // Scrollable task area
             Expanded(
-              child: _tasks.isEmpty
+              child: tasks.isEmpty
                   ? const Padding(
                       padding: EdgeInsets.symmetric(horizontal: 25),
                       child: Align(
@@ -115,22 +105,21 @@ class _TaskListScreenState extends State<TaskListScreen> {
                         child: EmptyState(),
                       ),
                     )
-      
                   : ListView(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                    children: _tasks.map(
-                      (task) => TaskTile(
-                        task: task,
-                        onToggleDone: () => _toggleTaskDone(task.id),
-                        onEdit: () {
-                          // TODO: navigate to Add/Edit Task screen
-                        },
-                        onDelete: () {
-                          // TODO: confirmation dialog + undo snackbar
-                        },
-                      ),
-                    ).toList(),
-                  ),
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                      children: tasks.map(
+                        (task) => TaskTile(
+                          task: task,
+                          onToggleDone: () => _toggleTaskDone(task.id),
+                          onEdit: () {
+                            // TODO: navigate to Add/Edit Task screen
+                          },
+                          onDelete: () {
+                            // TODO: confirmation dialog + undo snackbar
+                          },
+                        ),
+                      ).toList(),
+                    ),
             ),
           ],
         ),
