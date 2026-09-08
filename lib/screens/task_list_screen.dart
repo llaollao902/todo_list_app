@@ -55,6 +55,17 @@ class _TaskListScreenState extends State<TaskListScreen> {
     }
   }
 
+  Future<void> _editTask(Task task) async {
+    final updatedTask = await Navigator.push<Task>(
+      context,
+      MaterialPageRoute(builder: (_) => FormTaskScreen(task: task)),
+    );
+
+    if (updatedTask != null && mounted) {
+      await context.read<TaskProvider>().updateTask(updatedTask);
+    }
+  }
+
   Future<void> _deleteTask(Task task) async {
     final confirmed = await DeleteConfirmDialog.show(context, task.title);
 
@@ -122,9 +133,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
                         (task) => TaskTile(
                           task: task,
                           onToggleDone: () => _toggleTaskDone(task.id),
-                          onEdit: () {
-                            // TODO: navigate to Add/Edit Task screen
-                          },
+                          onEdit: () => _editTask(task),
                           onDelete: () => _deleteTask(task),
                         ),
                       ).toList(),
