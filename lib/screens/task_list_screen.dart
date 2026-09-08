@@ -49,11 +49,11 @@ class _TaskListScreenState extends State<TaskListScreen> {
     });
   }
 
-  /// Navigates to [AddEditTaskScreen] to create a new task.
+  /// Navigates to [FormTaskScreen] to create a new task.
   Future<void> _addNewTask() async {
     final newTask = await Navigator.push<Task>(
       context,
-      MaterialPageRoute(builder: (_) => const AddEditTaskScreen()),
+      MaterialPageRoute(builder: (_) => const FormTaskScreen()),
     );
 
     if (newTask != null && mounted) {
