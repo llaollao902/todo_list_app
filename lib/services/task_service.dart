@@ -18,4 +18,29 @@ class TaskService {
                 }))
             .toList());
   }
+
+  Future<void> addTask(Task task) async {
+    await _firestore
+        .collection(_collectionName)
+        .doc(task.id)
+        .set(task.toMap(), SetOptions(merge: true));
+  }
+
+  Future<void> updateTask(Task task) async {
+    await _firestore
+        .collection(_collectionName)
+        .doc(task.id)
+        .set(task.toMap(), SetOptions(merge: true));
+  }
+
+  Future<void> deleteTask(String id) async {
+    await _firestore.collection(_collectionName).doc(id).delete();
+  }
+
+  Future<void> restoreTask(Task task) async {
+    await _firestore
+        .collection(_collectionName)
+        .doc(task.id)
+        .set(task.toMap(), SetOptions(merge: true));
+  }
 }
