@@ -92,3 +92,21 @@ class TaskProvider extends ChangeNotifier {
   // Total task count (unfiltered — matches "Your list · N" in mockup,
   // which counts ALL tasks, not just the filtered view).
   int get totalCount => _allTasks.length;
+
+  // --- Filter/sort setters ---
+  // Each setter updates state AND calls notifyListeners() so the UI
+  // rebuilds with the new filtered/sorted list immediately.
+  void setTagFilter(TaskTag? tag) {
+    selectedTagFilter = tag;
+    notifyListeners();
+  }
+
+  void setPriorityFilter(Priority? priority) {
+    selectedPriorityFilter = priority;
+    notifyListeners();
+  }
+
+  void setSort(String sort) {
+    selectedSort = sort;
+    notifyListeners();
+  }
