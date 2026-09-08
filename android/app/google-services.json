@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "670779049709",
+    "project_id": "cmsc-128-labs",
+    "storage_bucket": "cmsc-128-labs.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:670779049709:android:bdb84ca5da58bdb398aee4",
+        "android_client_info": {
+          "package_name": "com.example.todo_list_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAZZP7k3tUPF7mb7W7peAodRAiAnT0s8M4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
