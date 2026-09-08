@@ -20,15 +20,18 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'To-Do',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        scaffoldBackgroundColor: AppColors.background,
-        fontFamily: 'Roboto', // default for body text
-        useMaterial3: true,
+    return ChangeNotifierProvider(
+      create: (_) => TaskProvider(),
+      child: MaterialApp(
+        title: 'To-Do',
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(
+          scaffoldBackgroundColor: AppColors.background,
+          fontFamily: 'Roboto', // default for body text
+          useMaterial3: true,
+        ),
+        home: const TaskListScreen(),
       ),
-      home: const TaskListScreen(),
     );
   }
 }
