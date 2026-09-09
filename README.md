@@ -151,3 +151,8 @@ The current development rules allow reads and writes to documents in the
 `tasks` collection. Before deploying this app beyond a classroom or local
 development environment, add authentication and restrict access to authorized
 users.
+
+## App Screenshots
+![alt text](screenshots/image.png)
+![alt text](screenshots/image-1.png)
+![alt text](screenshots/image-2.png)
