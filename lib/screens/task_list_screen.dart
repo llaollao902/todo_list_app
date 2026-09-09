@@ -11,7 +11,7 @@ import '../widgets/empty_state.dart';
 import '../widgets/delete_confirm_dialog.dart';
 import '../widgets/undo_snackbar.dart';
 
-// 
+
 class TaskListScreen extends StatefulWidget {
   const TaskListScreen({super.key});
 
@@ -19,6 +19,7 @@ class TaskListScreen extends StatefulWidget {
   State<TaskListScreen> createState() => _TaskListScreenState();
 }
 
+// The main screen of the app, showing the list of tasks and the filter/sort bar.
 class _TaskListScreenState extends State<TaskListScreen> {
   void _onTagChanged(TaskTag? tag) {
     context.read<TaskProvider>().setTagFilter(tag);
@@ -66,6 +67,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
     }
   }
 
+  // Deletes a task after confirming with the user, and shows an undo snackbar.
   Future<void> _deleteTask(Task task) async {
     final confirmed = await DeleteConfirmDialog.show(context, task.title);
 
@@ -90,6 +92,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
     );
   }
 
+// Builds the main UI of the task list screen, including the header, filter/sort bar, and the list of tasks.
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<TaskProvider>();
