@@ -177,13 +177,28 @@ class _TaskListScreenState extends State<TaskListScreen> {
         ),
       ),
 
-      // --- Floating action button to add a new task ---
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: AppColors.heading,
-        onPressed: () {
-          _addNewTask();
-        },
-        child: const Icon(Icons.add, color: Colors.white),
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              TextButton.icon(
+                onPressed: _logOut,
+                icon: const Icon(Icons.logout, size: 18),
+                label: const Text('Log Out'),
+                style: TextButton.styleFrom(foregroundColor: AppColors.heading),
+              ),
+              FloatingActionButton(
+                backgroundColor: AppColors.heading,
+                onPressed: _addNewTask,
+                child: const Icon(Icons.add, color: Colors.white),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -233,12 +248,6 @@ class _TaskListScreenState extends State<TaskListScreen> {
                   ),
                 ],
               ),
-            ),
-            TextButton.icon(
-              onPressed: _logOut,
-              icon: const Icon(Icons.logout, size: 18),
-              label: const Text('Log Out'),
-              style: TextButton.styleFrom(foregroundColor: AppColors.heading),
             ),
           ],
         ),
