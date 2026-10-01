@@ -19,26 +19,21 @@ class SignInScreen extends StatefulWidget {
 class _SignInScreenState extends State<SignInScreen> {
   final _formKey = GlobalKey<FormState>();
   final _authService = AuthService();
-  final _emailController = TextEditingController();
+  final _identifierController = TextEditingController();
   final _passwordController = TextEditingController();
 
   bool _isLoading = false;
 
   @override
   void dispose() {
-    _emailController.dispose();
+    _identifierController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
-  String? _validateEmail(String? value) {
+  String? _validateIdentifier(String? value) {
     if (value == null || value.trim().isEmpty) {
-      return 'Please enter your email address.';
-    }
-
-    final emailPattern = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
-    if (!emailPattern.hasMatch(value.trim())) {
-      return 'Please enter a valid email address.';
+      return 'Please enter your username or email address.';
     }
     return null;
   }
@@ -58,8 +53,8 @@ class _SignInScreenState extends State<SignInScreen> {
     setState(() => _isLoading = true);
 
     try {
-      await _authService.signInWithEmailAndPassword(
-        email: _emailController.text.trim(),
+      await _authService.signInWithIdentifierAndPassword(
+        identifier: _identifierController.text,
         password: _passwordController.text,
       );
 
@@ -125,12 +120,12 @@ class _SignInScreenState extends State<SignInScreen> {
                     ),
                     const SizedBox(height: 28),
                     AuthTextField(
-                      label: 'Email Address',
-                      hint: 'maya.lin@domain.com',
-                      icon: Icons.mail_outline,
-                      controller: _emailController,
+                      label: 'Username or Email',
+                      hint: 'maya_lin or maya.lin@domain.com',
+                      icon: Icons.person_outline,
+                      controller: _identifierController,
                       keyboardType: TextInputType.emailAddress,
-                      validator: _validateEmail,
+                      validator: _validateIdentifier,
                     ),
                     const SizedBox(height: 16),
                     AuthPasswordField(

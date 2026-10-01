@@ -21,6 +21,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final _authService = AuthService();
 
   final _displayNameController = TextEditingController();
+  final _usernameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
@@ -29,6 +30,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   @override
   void dispose() {
     _displayNameController.dispose();
+    _usernameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -59,6 +61,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
     return null;
   }
 
+  String? _validateUsername(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Please choose a username.';
+    }
+    if (!AuthService.isValidUsername(value)) {
+      return 'Use 3-20 letters, numbers, or underscores.';
+    }
+    return null;
+  }
+
   String? _validatePassword(String? value) {
     if (value == null || value.isEmpty) {
       return 'Please enter a password.';
@@ -85,6 +97,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
         email: _emailController.text.trim(),
         password: _passwordController.text,
         displayName: _displayNameController.text.trim(),
+        username: _usernameController.text,
       );
 
       if (!mounted) return;
@@ -169,7 +182,17 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
                     // --- Email ---
                     AuthTextField(
-                      label: 'Username or Email',
+                      label: 'Username',
+                      hint: 'maya_lin',
+                      icon: Icons.alternate_email,
+                      controller: _usernameController,
+                      validator: _validateUsername,
+                    ),
+                    const SizedBox(height: 16),
+
+                    // --- Email ---
+                    AuthTextField(
+                      label: 'Email Address',
                       hint: 'maya.lin@domain.com',
                       icon: Icons.mail_outline,
                       controller: _emailController,
