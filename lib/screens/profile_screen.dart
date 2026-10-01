@@ -3,7 +3,11 @@ import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import '../utils/auth_error_translator.dart';
 import '../utils/constants.dart';
-
+import '../widgets/auth_form/auth_password_field.dart';
+import '../widgets/auth_form/auth_submit_button.dart';
+import '../widgets/auth_form/auth_text_field.dart';
+import '../widgets/profile/profile_avatar_header.dart';
+import '../widgets/profile/section_header.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -182,4 +186,125 @@ class _ProfileScreenState extends State<ProfileScreen> {
     //   (route) => false);
   }
 
- 
+  @override
+  Widget build(BuildContext context) {
+    final user = _authService.currentUser;
+    final memberSince = user?.metadata.creationTime != null
+        ? 'Member since ${_formatMonthYear(user!.metadata.creationTime!)}'
+        : '';
+
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        backgroundColor: AppColors.background,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: AppColors.heading),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: const Text(
+          'Account Settings',
+          style: TextStyle(color: AppColors.heading, fontWeight: FontWeight.w600, fontSize: 16),
+        ),
+        centerTitle: false,
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // --- Avatar / name / handle ---
+                Center(
+                  child: ProfileAvatarHeader(
+                    displayName: _displayNameController.text.isEmpty
+                        ? 'Your name'
+                        : _displayNameController.text,
+                    email: user?.email ?? '',
+                    memberSince: memberSince,
+                  ),
+                ),
+                const SizedBox(height: 28),
+
+                // --- Profile Information section ---
+                const SectionHeader(icon: Icons.person_outline, title: 'Profile Information'),
+                const SizedBox(height: 16),
+
+                AuthTextField(
+                  label: 'Display Name',
+                  hint: 'Your name',
+                  icon: Icons.badge_outlined,
+                  controller: _displayNameController,
+                  validator: _validateDisplayName,
+                  suffixIcon: const Icon(Icons.edit_outlined, size: 18, color: AppColors.subtext),
+                  helperText: 'Appears across your tasks and account.',
+                ),
+                const SizedBox(height: 16),
+
+                AuthTextField(
+                  label: 'Username or Email',
+                  hint: 'you@domain.com',
+                  icon: Icons.mail_outline,
+                  controller: _emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  validator: _validateEmail,
+                  suffixIcon: const Icon(Icons.verified_outlined, size: 18, color: Color(0xFF6FA671)),
+                  helperText: 'Must be unique — Firebase checks this on save.',
+                ),
+                const SizedBox(height: 28),
+
+                // --- Security & Password section ---
+                const SectionHeader(icon: Icons.lock_outline, title: 'Security & Password'),
+                const SizedBox(height: 16),
+
+                AuthPasswordField(
+                  label: 'Current Password',
+                  hint: 'Required to change email or password',
+                  controller: _currentPasswordController,
+                  validator: _validateCurrentPassword,
+                ),
+                const SizedBox(height: 16),
+
+                AuthPasswordField(
+                  label: 'New Password',
+                  hint: 'Leave blank to keep your current password',
+                  controller: _newPasswordController,
+                  validator: _validateNewPassword,
+                ),
+                const SizedBox(height: 28),
+
+                // --- Save button ---
+                AuthSubmitButton(
+                  label: 'Save changes',
+                  isLoading: _isSaving,
+                  onPressed: _handleSaveChanges,
+                ),
+                const SizedBox(height: 16),
+
+                // --- Log out ---
+                Center(
+                  child: TextButton.icon(
+                    onPressed: _handleLogOut,
+                    icon: const Icon(Icons.logout, size: 16, color: Colors.redAccent),
+                    label: const Text('Log out', style: TextStyle(color: Colors.redAccent)),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _formatMonthYear(DateTime date) {
+    const months = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December',
+    ];
+    return '${months[date.month - 1]} ${date.year}';
+  }
+}

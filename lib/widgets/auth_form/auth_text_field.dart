@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../utils/constants.dart';
 
-// A reusable labeled text field for auth forms (display name, email).
-// Handles the "Label *" header + icon-prefixed rounded input styling
-// shared across every field in the Sign Up / Sign In screens.
 class AuthTextField extends StatelessWidget {
   final String label;
   final String hint;
@@ -11,6 +8,8 @@ class AuthTextField extends StatelessWidget {
   final TextEditingController controller;
   final String? Function(String?)? validator;
   final TextInputType keyboardType;
+  final Widget? suffixIcon; // NEW — lets callers show a pencil, check badge, etc.
+  final String? helperText;  // NEW — small caption text under the field
 
   const AuthTextField({
     super.key,
@@ -20,6 +19,8 @@ class AuthTextField extends StatelessWidget {
     required this.controller,
     this.validator,
     this.keyboardType = TextInputType.text,
+    this.suffixIcon,
+    this.helperText,
   });
 
   @override
@@ -27,9 +28,6 @@ class AuthTextField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // --- Label row: "Display Name *" ---
-        // RichText lets us color just the asterisk differently from
-        // the rest of the label, matching the mockup.
         RichText(
           text: TextSpan(
             text: label,
@@ -39,16 +37,11 @@ class AuthTextField extends StatelessWidget {
               color: AppColors.heading,
             ),
             children: const [
-              TextSpan(
-                text: ' *',
-                style: TextStyle(color: Colors.redAccent),
-              ),
+              TextSpan(text: ' *', style: TextStyle(color: Colors.redAccent)),
             ],
           ),
         ),
         const SizedBox(height: 8),
-
-        // --- Input field ---
         TextFormField(
           controller: controller,
           validator: validator,
@@ -58,14 +51,13 @@ class AuthTextField extends StatelessWidget {
             hintText: hint,
             hintStyle: const TextStyle(color: AppColors.subtext, fontSize: 14),
             prefixIcon: Icon(icon, size: 20, color: AppColors.subtext),
+            suffixIcon: suffixIcon, // NEW
             filled: true,
             fillColor: AppColors.tagBadgeBg.withOpacity(0.5),
-            // No border by default — rounded, borderless look like the mockup.
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
               borderSide: BorderSide.none,
             ),
-            // Red border only appears when validation fails.
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
               borderSide: const BorderSide(color: Colors.redAccent, width: 1.2),
@@ -77,6 +69,17 @@ class AuthTextField extends StatelessWidget {
             contentPadding: const EdgeInsets.symmetric(vertical: 16),
           ),
         ),
+        // Small caption under the field, e.g. "Appears across your tasks."
+        if (helperText != null) ...[
+          const SizedBox(height: 6),
+          Padding(
+            padding: const EdgeInsets.only(left: 4),
+            child: Text(
+              helperText!,
+              style: const TextStyle(fontSize: 11.5, color: AppColors.subtext),
+            ),
+          ),
+        ],
       ],
     );
   }
