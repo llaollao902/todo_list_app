@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../utils/constants.dart';
 import '../widgets/auth_form/auth_password_field.dart';
+import '../widgets/auth_form/auth_submit_button.dart';
 import '../widgets/auth_form/auth_text_field.dart';
 
 class SignUpScreen extends StatefulWidget {
@@ -17,6 +18,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final _displayNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -56,6 +59,17 @@ class _SignUpScreenState extends State<SignUpScreen> {
       return 'Password must be at least 8 characters.';
     }
     return null;
+  }
+
+  // --- Submit handler ---
+  Future<void> _handleCreateAccount() async {
+    // Validate all three fields at once. If any fail, their error
+    // messages appear automatically under each field.
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    // Firebase call added in next commit
   }
 
   @override
@@ -124,6 +138,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       validator: _validatePassword,
                     ),
                     const SizedBox(height: 28),
+
+                    // --- Submit ---
+                    AuthSubmitButton(
+                      label: 'Create account',
+                      isLoading: _isLoading,
+                      onPressed: _handleCreateAccount,
+                    ),
+                    const SizedBox(height: 20),
                   ],
                 ),
               ),
