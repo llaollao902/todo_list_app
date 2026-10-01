@@ -9,6 +9,57 @@ class AuthService {
   // Returns the signed-in user, or `null` when no user is signed in.
   User? get currentUser => _firebaseAuth.currentUser;
 
+  Future<String?> getUsernameForCurrentUser() async {
+    final user = currentUser;
+    if (user == null) return null;
+
+    final usernames = await _firestore
+        .collection('usernames')
+        .where('uid', isEqualTo: user.uid)
+        .limit(1)
+        .get();
+
+    return usernames.docs.isEmpty ? null : usernames.docs.first.id;
+  }
+
+  Future<void> updateUsername({
+    required String currentUsername,
+    required String newUsername,
+  }) async {
+    final user = currentUser;
+    if (user == null) {
+      throw FirebaseAuthException(code: 'user-not-found');
+    }
+
+    final normalizedCurrent = _normalizeUsername(currentUsername);
+    final normalizedNew = _normalizeUsername(newUsername);
+    if (!_isValidUsername(normalizedNew)) {
+      throw FirebaseAuthException(code: 'invalid-username');
+    }
+    if (normalizedCurrent == normalizedNew) return;
+
+    final usernames = _firestore.collection('usernames');
+    final oldRef = normalizedCurrent.isEmpty
+        ? null
+        : usernames.doc(normalizedCurrent);
+    final newRef = usernames.doc(normalizedNew);
+
+    await _firestore.runTransaction((transaction) async {
+      final newSnapshot = await transaction.get(newRef);
+      final oldSnapshot = oldRef == null ? null : await transaction.get(oldRef);
+
+      if (newSnapshot.exists && newSnapshot.data()?['uid'] != user.uid) {
+        throw FirebaseAuthException(code: 'username-already-in-use');
+      }
+
+      if (oldRef != null && oldSnapshot?.data()?['uid'] == user.uid) {
+        transaction.delete(oldRef);
+      }
+
+      transaction.set(newRef, {'uid': user.uid, 'email': user.email});
+    });
+  }
+
   // Emits the current user and later changes to the sign-in state.
   // This is what lets the app automatically react to login/logout
   // anywhere, without manually checking "am I logged in?" everywhere.

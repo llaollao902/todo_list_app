@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../utils/constants.dart';
 
 class AuthTextField extends StatelessWidget {
@@ -8,8 +9,9 @@ class AuthTextField extends StatelessWidget {
   final TextEditingController controller;
   final String? Function(String?)? validator;
   final TextInputType keyboardType;
-  final Widget? suffixIcon; 
-  final String? helperText;  
+  final Widget? suffixIcon;
+  final String? helperText;
+  final bool readOnly;
 
   const AuthTextField({
     super.key,
@@ -21,6 +23,7 @@ class AuthTextField extends StatelessWidget {
     this.keyboardType = TextInputType.text,
     this.suffixIcon,
     this.helperText,
+    this.readOnly = false,
   });
 
   @override
@@ -37,7 +40,10 @@ class AuthTextField extends StatelessWidget {
               color: AppColors.heading,
             ),
             children: const [
-              TextSpan(text: ' *', style: TextStyle(color: Colors.redAccent)),
+              TextSpan(
+                text: ' *',
+                style: TextStyle(color: Colors.redAccent),
+              ),
             ],
           ),
         ),
@@ -46,6 +52,7 @@ class AuthTextField extends StatelessWidget {
           controller: controller,
           validator: validator,
           keyboardType: keyboardType,
+          readOnly: readOnly,
           style: const TextStyle(fontSize: 15, color: AppColors.heading),
           decoration: InputDecoration(
             hintText: hint,

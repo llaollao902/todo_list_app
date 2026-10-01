@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
+
 import '../../utils/constants.dart';
 
 // The circular initials avatar + name + handle block at the top of
 // the Profile screen.
 class ProfileAvatarHeader extends StatelessWidget {
   final String displayName;
-  final String email;
+  final String username;
   final String memberSince;
 
   const ProfileAvatarHeader({
     super.key,
     required this.displayName,
-    required this.email,
+    required this.username,
     required this.memberSince,
   });
 
@@ -58,7 +59,7 @@ class ProfileAvatarHeader extends StatelessWidget {
         ),
         const SizedBox(height: 4),
         Text(
-          '$email · $memberSince',
+          '$username · $memberSince',
           style: const TextStyle(fontSize: 12, color: AppColors.subtext),
         ),
       ],

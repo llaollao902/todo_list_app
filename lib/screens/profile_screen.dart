@@ -26,15 +26,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   late final TextEditingController _displayNameController;
   late final TextEditingController _emailController;
+  late final TextEditingController _usernameController;
   final _currentPasswordController = TextEditingController();
   final _newPasswordController = TextEditingController();
 
   bool _isSaving = false;
+  bool _isLoadingUsername = true;
 
   // Tracks whether the typed email differs from the signed-in user's
   // current email — the UI only needs to show "Available" once the
   // user has actually changed it, not for the unchanged original value.
   String _originalEmail = '';
+  String _originalUsername = '';
 
   @override
   void initState() {
@@ -46,13 +49,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
       text: user?.displayName ?? '',
     );
     _emailController = TextEditingController(text: user?.email ?? '');
+    _usernameController = TextEditingController();
     _originalEmail = user?.email ?? '';
+    _loadUsername();
+  }
+
+  Future<void> _loadUsername() async {
+    String? username;
+    try {
+      username = await _authService.getUsernameForCurrentUser();
+    } catch (_) {
+      // Keep the profile usable if the username mapping cannot be loaded.
+    }
+
+    if (!mounted) return;
+    setState(() {
+      _originalUsername = username ?? '';
+      _usernameController.text = _originalUsername;
+      _isLoadingUsername = false;
+    });
   }
 
   @override
   void dispose() {
     _displayNameController.dispose();
     _emailController.dispose();
+    _usernameController.dispose();
     _currentPasswordController.dispose();
     _newPasswordController.dispose();
     super.dispose();
@@ -72,6 +94,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final emailPattern = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
     if (!emailPattern.hasMatch(value.trim())) {
       return 'Please enter a valid email address.';
+    }
+    return null;
+  }
+
+  String? _validateUsername(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Username can\'t be empty.';
+    }
+    if (!AuthService.isValidUsername(value)) {
+      return 'Use 3-20 letters, numbers, or underscores.';
     }
     return null;
   }
@@ -115,6 +147,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     final newEmail = _emailController.text.trim();
     final newDisplayName = _displayNameController.text.trim();
+    final newUsername = AuthService.normalizeUsername(_usernameController.text);
     final newPassword = _newPasswordController.text;
     final currentPassword = _currentPasswordController.text;
 
@@ -149,12 +182,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
         await user.updatePassword(newPassword);
       }
 
+      if (newUsername != _originalUsername) {
+        await _authService.updateUsername(
+          currentUsername: _originalUsername,
+          newUsername: newUsername,
+        );
+      }
+
       await user.reload();
 
       if (!mounted) return;
       _showMessage('Profile updated successfully.', isError: false);
       _currentPasswordController.clear();
       _newPasswordController.clear();
+      setState(() {
+        _originalUsername = newUsername;
+        _usernameController.text = newUsername;
+      });
       if (emailChanged) {
         _showMessage(
           'Check your new email inbox to confirm the change.',
@@ -242,7 +286,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     displayName: _displayNameController.text.isEmpty
                         ? 'Your name'
                         : _displayNameController.text,
-                    email: user?.email ?? '',
+                    username: _isLoadingUsername
+                        ? 'Loading username'
+                        : _usernameController.text.isEmpty
+                        ? 'Username not set'
+                        : '@${_usernameController.text}',
                     memberSince: memberSince,
                   ),
                 ),
@@ -257,6 +305,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 _SectionCard(
                   children: [
                     AuthTextField(
+                      label: 'Username',
+                      hint: 'Your username',
+                      icon: Icons.alternate_email,
+                      controller: _usernameController,
+                      validator: _validateUsername,
+                      suffixIcon: const Icon(
+                        Icons.edit_outlined,
+                        size: 18,
+                        color: AppColors.subtext,
+                      ),
+                      helperText: _isLoadingUsername
+                          ? 'Loading username...'
+                          : 'Used to sign in to your account.',
+                    ),
+                    const SizedBox(height: 16),
+                    AuthTextField(
                       label: 'Display Name',
                       hint: 'Your name',
                       icon: Icons.badge_outlined,
@@ -270,7 +334,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     const SizedBox(height: 16),
                     AuthTextField(
-                      label: 'Username or Email',
+                      label: 'Email Address',
                       hint: 'you@domain.com',
                       icon: Icons.mail_outline,
                       controller: _emailController,
