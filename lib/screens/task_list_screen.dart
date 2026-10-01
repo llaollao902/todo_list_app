@@ -10,6 +10,7 @@ import '../widgets/filter_sort_bar.dart';
 import '../widgets/list_header.dart';
 import '../widgets/task_tile.dart';
 import 'form_task_screen.dart';
+import 'profile_screen.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/delete_confirm_dialog.dart';
 import '../widgets/undo_snackbar.dart';
@@ -103,6 +104,11 @@ class _TaskListScreenState extends State<TaskListScreen> {
         const SnackBar(content: Text('Unable to log out. Please try again.')),
       );
     }
+  }
+
+  void _openProfile() {
+    Navigator.of(context)
+        .push(MaterialPageRoute(builder: (_) => const ProfileScreen()));
   }
 
   // Builds the main UI of the task list screen, including the header, filter/sort bar, and the list of tasks.
@@ -230,15 +236,31 @@ class _TaskListScreenState extends State<TaskListScreen> {
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    'Hello, $userName',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      fontFamily: 'Georgia',
-                      color: AppColors.heading,
-                    ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Hello, $userName',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.headlineMedium
+                              ?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                fontFamily: 'Georgia',
+                                color: AppColors.heading,
+                              ),
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: _openProfile,
+                        tooltip: 'Profile settings',
+                        visualDensity: VisualDensity.compact,
+                        icon: const Icon(
+                          Icons.account_circle_outlined,
+                          color: AppColors.heading,
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 2),
                   Text(

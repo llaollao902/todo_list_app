@@ -8,8 +8,8 @@ class AuthTextField extends StatelessWidget {
   final TextEditingController controller;
   final String? Function(String?)? validator;
   final TextInputType keyboardType;
-  final Widget? suffixIcon; // NEW — lets callers show a pencil, check badge, etc.
-  final String? helperText;  // NEW — small caption text under the field
+  final Widget? suffixIcon; 
+  final String? helperText;  
 
   const AuthTextField({
     super.key,

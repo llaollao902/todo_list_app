@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+
 import '../services/auth_service.dart';
 import '../utils/auth_error_translator.dart';
 import '../utils/constants.dart';
@@ -38,7 +39,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     // Pre-fill from the currently signed-in Firebase user.
     final user = _authService.currentUser;
-    _displayNameController = TextEditingController(text: user?.displayName ?? '');
+    _displayNameController = TextEditingController(
+      text: user?.displayName ?? '',
+    );
     _emailController = TextEditingController(text: user?.email ?? '');
     _originalEmail = user?.email ?? '';
   }
@@ -92,7 +95,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final changingEmail = _emailController.text.trim() != _originalEmail;
     final changingPassword = _newPasswordController.text.isNotEmpty;
 
-    if ((changingEmail || changingPassword) && (value == null || value.isEmpty)) {
+    if ((changingEmail || changingPassword) &&
+        (value == null || value.isEmpty)) {
       return 'Enter your current password to confirm changes.';
     }
     return null;
@@ -178,12 +182,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _handleLogOut() async {
-    await _authService.signOut();
-    if (!mounted) return;
-    // TODO: navigate back to the Sign In screen, clearing the stack:
-    // Navigator.pushAndRemoveUntil(context,
-    //   MaterialPageRoute(builder: (_) => const SignInScreen()),
-    //   (route) => false);
+    try {
+      await _authService.signOut();
+      if (!mounted) return;
+      Navigator.of(context).popUntil((route) => route.isFirst);
+    } catch (_) {
+      if (!mounted) return;
+      _showMessage('Unable to log out. Please try again.', isError: true);
+    }
   }
 
   @override
@@ -204,7 +210,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         title: const Text(
           'Account Settings',
-          style: TextStyle(color: AppColors.heading, fontWeight: FontWeight.w600, fontSize: 16),
+          style: TextStyle(
+            color: AppColors.heading,
+            fontWeight: FontWeight.w600,
+            fontSize: 16,
+          ),
         ),
         centerTitle: false,
       ),
@@ -229,49 +239,65 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const SizedBox(height: 28),
 
                 // --- Profile Information section ---
-                const SectionHeader(icon: Icons.person_outline, title: 'Profile Information'),
-                const SizedBox(height: 16),
-
-                AuthTextField(
-                  label: 'Display Name',
-                  hint: 'Your name',
-                  icon: Icons.badge_outlined,
-                  controller: _displayNameController,
-                  validator: _validateDisplayName,
-                  suffixIcon: const Icon(Icons.edit_outlined, size: 18, color: AppColors.subtext),
-                  helperText: 'Appears across your tasks and account.',
+                const SectionHeader(
+                  icon: Icons.person_outline,
+                  title: 'Profile Information',
                 ),
-                const SizedBox(height: 16),
-
-                AuthTextField(
-                  label: 'Username or Email',
-                  hint: 'you@domain.com',
-                  icon: Icons.mail_outline,
-                  controller: _emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  validator: _validateEmail,
-                  suffixIcon: const Icon(Icons.verified_outlined, size: 18, color: Color(0xFF6FA671)),
-                  helperText: 'Must be unique — Firebase checks this on save.',
+                const SizedBox(height: 12),
+                _SectionCard(
+                  children: [
+                    AuthTextField(
+                      label: 'Display Name',
+                      hint: 'Your name',
+                      icon: Icons.badge_outlined,
+                      controller: _displayNameController,
+                      validator: _validateDisplayName,
+                      suffixIcon: const Icon(
+                        Icons.edit_outlined,
+                        size: 18,
+                        color: AppColors.subtext,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    AuthTextField(
+                      label: 'Username or Email',
+                      hint: 'you@domain.com',
+                      icon: Icons.mail_outline,
+                      controller: _emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      validator: _validateEmail,
+                      suffixIcon: const Icon(
+                        Icons.edit_outlined,
+                        size: 18,
+                        color: AppColors.subtext,
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 28),
 
                 // --- Security & Password section ---
-                const SectionHeader(icon: Icons.lock_outline, title: 'Security & Password'),
-                const SizedBox(height: 16),
-
-                AuthPasswordField(
-                  label: 'Current Password',
-                  hint: 'Required to change email or password',
-                  controller: _currentPasswordController,
-                  validator: _validateCurrentPassword,
+                const SectionHeader(
+                  icon: Icons.lock_outline,
+                  title: 'Security & Password',
                 ),
-                const SizedBox(height: 16),
-
-                AuthPasswordField(
-                  label: 'New Password',
-                  hint: 'Leave blank to keep your current password',
-                  controller: _newPasswordController,
-                  validator: _validateNewPassword,
+                const SizedBox(height: 12),
+                _SectionCard(
+                  children: [
+                    AuthPasswordField(
+                      label: 'Current Password',
+                      hint: 'Required to change email or password',
+                      controller: _currentPasswordController,
+                      validator: _validateCurrentPassword,
+                    ),
+                    const SizedBox(height: 16),
+                    AuthPasswordField(
+                      label: 'New Password',
+                      hint: 'Leave blank to keep your current password',
+                      controller: _newPasswordController,
+                      validator: _validateNewPassword,
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 28),
 
@@ -287,8 +313,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Center(
                   child: TextButton.icon(
                     onPressed: _handleLogOut,
-                    icon: const Icon(Icons.logout, size: 16, color: Colors.redAccent),
-                    label: const Text('Log out', style: TextStyle(color: Colors.redAccent)),
+                    icon: const Icon(
+                      Icons.logout,
+                      size: 16,
+                      color: Colors.redAccent,
+                    ),
+                    label: const Text(
+                      'Log out',
+                      style: TextStyle(color: Colors.redAccent),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -302,9 +335,42 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   String _formatMonthYear(DateTime date) {
     const months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December',
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
     ];
     return '${months[date.month - 1]} ${date.year}';
+  }
+}
+
+/// Groups a section's fields in the rounded card shown in the mockup.
+class _SectionCard extends StatelessWidget {
+  const _SectionCard({required this.children});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.subtext.withAlpha(40)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: children,
+      ),
+    );
   }
 }
