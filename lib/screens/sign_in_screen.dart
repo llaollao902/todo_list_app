@@ -1,26 +1,24 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-import 'sign_in_screen.dart';
 import '../services/auth_service.dart';
 import '../utils/auth_error_translator.dart';
 import '../utils/constants.dart';
 import '../widgets/auth_form/auth_password_field.dart';
 import '../widgets/auth_form/auth_submit_button.dart';
 import '../widgets/auth_form/auth_text_field.dart';
+import 'sign_up_screen.dart';
 
-class SignUpScreen extends StatefulWidget {
-  const SignUpScreen({super.key});
+class SignInScreen extends StatefulWidget {
+  const SignInScreen({super.key});
 
   @override
-  State<SignUpScreen> createState() => _SignUpScreenState();
+  State<SignInScreen> createState() => _SignInScreenState();
 }
 
-class _SignUpScreenState extends State<SignUpScreen> {
+class _SignInScreenState extends State<SignInScreen> {
   final _formKey = GlobalKey<FormState>();
   final _authService = AuthService();
-
-  final _displayNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
@@ -28,30 +26,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   @override
   void dispose() {
-    _displayNameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
-  }
-
-  // --- Field-level validators ---
-  // These run client-side, instantly, before any network request —
-  // catching obvious mistakes (empty fields, bad email format, short
-  // password) without waiting on Firebase.
-
-  String? _validateDisplayName(String? value) {
-    if (value == null || value.trim().isEmpty) {
-      return 'Please enter your name.';
-    }
-    return null; // null means "valid"
   }
 
   String? _validateEmail(String? value) {
     if (value == null || value.trim().isEmpty) {
       return 'Please enter your email address.';
     }
-    // Simple email format check — not exhaustive, but catches
-    // obviously malformed input like "maya.lin" with no "@domain".
+
     final emailPattern = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
     if (!emailPattern.hasMatch(value.trim())) {
       return 'Please enter a valid email address.';
@@ -61,19 +45,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   String? _validatePassword(String? value) {
     if (value == null || value.isEmpty) {
-      return 'Please enter a password.';
-    }
-    if (value.length < 8) {
-      return 'Password must be at least 8 characters.';
+      return 'Please enter your password.';
     }
     return null;
   }
 
-  // --- Submit handler ---
-  Future<void> _handleCreateAccount() async {
-    // Trigger validation on all three fields at once. If any fail,
-    // their error messages appear automatically under each field —
-    // we don't need to display them ourselves.
+  Future<void> _handleSignIn() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -81,25 +58,17 @@ class _SignUpScreenState extends State<SignUpScreen> {
     setState(() => _isLoading = true);
 
     try {
-      await _authService.signUp(
+      await _authService.signInWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text,
-        displayName: _displayNameController.text.trim(),
       );
 
       if (!mounted) return;
-
-      // The root auth gate switches to TaskListScreen after Firebase emits
-      // the signed-in user. Remove this form from the navigation stack.
       Navigator.of(context).popUntil((route) => route.isFirst);
-    } on FirebaseAuthException catch (e) {
-      // This is where duplicate emails get caught: Firebase throws
-      // 'email-already-in-use' here, which AuthErrorTranslator turns
-      // into a readable message.
+    } on FirebaseAuthException catch (error) {
       if (!mounted) return;
-      _showError(AuthErrorTranslator.translate(e));
-    } catch (e) {
-      // Catch-all for anything unexpected (e.g. no internet connection).
+      _showError(AuthErrorTranslator.translate(error));
+    } catch (_) {
       if (!mounted) return;
       _showError('Something went wrong. Please try again.');
     } finally {
@@ -134,9 +103,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    // --- Heading ---
                     const Text(
-                      'Begin your quiet space.',
+                      'Welcome back.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 24,
@@ -147,7 +115,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     ),
                     const SizedBox(height: 8),
                     const Text(
-                      'A calm place to organize your days and cultivate mindful focus.',
+                      'Sign in to return to your tasks and find your focus.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 13,
@@ -156,20 +124,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       ),
                     ),
                     const SizedBox(height: 28),
-
-                    // --- Display Name ---
                     AuthTextField(
-                      label: 'Display Name',
-                      hint: 'Maya Lin',
-                      icon: Icons.badge_outlined,
-                      controller: _displayNameController,
-                      validator: _validateDisplayName,
-                    ),
-                    const SizedBox(height: 16),
-
-                    // --- Email ---
-                    AuthTextField(
-                      label: 'Username or Email',
+                      label: 'Email Address',
                       hint: 'maya.lin@domain.com',
                       icon: Icons.mail_outline,
                       controller: _emailController,
@@ -177,30 +133,24 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       validator: _validateEmail,
                     ),
                     const SizedBox(height: 16),
-
-                    // --- Password ---
                     AuthPasswordField(
                       label: 'Password',
-                      hint: 'At least 8 characters',
+                      hint: 'Your password',
                       controller: _passwordController,
                       validator: _validatePassword,
                     ),
                     const SizedBox(height: 28),
-
-                    // --- Submit ---
                     AuthSubmitButton(
-                      label: 'Create account',
+                      label: 'Sign in',
                       isLoading: _isLoading,
-                      onPressed: _handleCreateAccount,
+                      onPressed: _handleSignIn,
                     ),
                     const SizedBox(height: 20),
-
-                    // --- Sign in link ---
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         const Text(
-                          'Already have an account?',
+                          'New here?',
                           style: TextStyle(
                             fontSize: 13,
                             color: AppColors.subtext,
@@ -208,16 +158,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         ),
                         TextButton(
                           onPressed: () {
-                            final navigator = Navigator.of(context);
-                            if (navigator.canPop()) {
-                              navigator.pop();
-                            } else {
-                              navigator.pushReplacement(
-                                MaterialPageRoute(
-                                  builder: (_) => const SignInScreen(),
-                                ),
-                              );
-                            }
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => const SignUpScreen(),
+                              ),
+                            );
                           },
                           style: TextButton.styleFrom(
                             foregroundColor: AppColors.heading,
@@ -226,7 +171,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                           ),
                           child: const Text(
-                            'Sign in',
+                            'Create an account',
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,

@@ -4,7 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 class AuthErrorTranslator {
   static String translate(FirebaseAuthException e) {
     switch (e.code) {
-      // Sign up specific 
+      // Sign up specific
       case 'email-already-in-use':
         return 'An account already exists for that email address.';
       case 'weak-password':
@@ -19,6 +19,8 @@ class AuthErrorTranslator {
         return 'No account found for that email address.';
       case 'wrong-password':
         return 'Incorrect password. Please try again.';
+      case 'invalid-credential':
+        return 'Email or password is incorrect. Please try again.';
       case 'user-disabled':
         return 'This account has been disabled.';
       case 'too-many-requests':
