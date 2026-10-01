@@ -1,7 +1,10 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../models/task.dart';
 import '../providers/task_provider.dart';
+import '../services/auth_service.dart';
 import '../utils/constants.dart';
 import '../widgets/filter_sort_bar.dart';
 import '../widgets/list_header.dart';
@@ -10,7 +13,6 @@ import 'form_task_screen.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/delete_confirm_dialog.dart';
 import '../widgets/undo_snackbar.dart';
-
 
 class TaskListScreen extends StatefulWidget {
   const TaskListScreen({super.key});
@@ -92,7 +94,18 @@ class _TaskListScreenState extends State<TaskListScreen> {
     );
   }
 
-// Builds the main UI of the task list screen, including the header, filter/sort bar, and the list of tasks.
+  Future<void> _logOut() async {
+    try {
+      await AuthService().signOut();
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Unable to log out. Please try again.')),
+      );
+    }
+  }
+
+  // Builds the main UI of the task list screen, including the header, filter/sort bar, and the list of tasks.
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<TaskProvider>();
@@ -133,7 +146,6 @@ class _TaskListScreenState extends State<TaskListScreen> {
               ),
             ),
 
-
             // Scrollable task area
             Expanded(
               child: tasks.isEmpty
@@ -145,15 +157,20 @@ class _TaskListScreenState extends State<TaskListScreen> {
                       ),
                     )
                   : ListView(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                      children: tasks.map(
-                        (task) => TaskTile(
-                          task: task,
-                          onToggleDone: () => _toggleTaskDone(task.id),
-                          onEdit: () => _editTask(task),
-                          onDelete: () => _deleteTask(task),
-                        ),
-                      ).toList(),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 8,
+                      ),
+                      children: tasks
+                          .map(
+                            (task) => TaskTile(
+                              task: task,
+                              onToggleDone: () => _toggleTaskDone(task.id),
+                              onEdit: () => _editTask(task),
+                              onDelete: () => _deleteTask(task),
+                            ),
+                          )
+                          .toList(),
                     ),
             ),
           ],
@@ -167,8 +184,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
           _addNewTask();
         },
         child: const Icon(Icons.add, color: Colors.white),
-      )
-
+      ),
     );
   }
 
@@ -176,33 +192,55 @@ class _TaskListScreenState extends State<TaskListScreen> {
     final today = MaterialLocalizations.of(context)
         .formatFullDate(DateTime.now())
         .toUpperCase();
+    final user = FirebaseAuth.instance.currentUser;
+    final userName =
+        user?.displayName ?? user?.email?.split('@').first ?? 'there';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          today,
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                letterSpacing: 1.2,
-                color: AppColors.subtext,
-                fontWeight: FontWeight.w600,
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    today,
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      letterSpacing: 1.2,
+                      color: AppColors.subtext,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Hello, $userName',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'Georgia',
+                      color: AppColors.heading,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Let\'s get things done!',
+                    style: Theme.of(context).textTheme.bodyMedium
+                        ?.copyWith(color: AppColors.subtext),
+                  ),
+                ],
               ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          "What's Brewing?",
-          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-                fontFamily: 'Georgia',
-                color: AppColors.heading,
-              ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          'Let\'s get things done!',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppColors.subtext,
-              ),
+            ),
+            TextButton.icon(
+              onPressed: _logOut,
+              icon: const Icon(Icons.logout, size: 18),
+              label: const Text('Log Out'),
+              style: TextButton.styleFrom(foregroundColor: AppColors.heading),
+            ),
+          ],
         ),
       ],
     );
