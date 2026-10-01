@@ -1,6 +1,8 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../services/auth_service.dart';
+import '../utils/auth_error_translator.dart';
 import '../utils/constants.dart';
 import '../widgets/auth_form/auth_password_field.dart';
 import '../widgets/auth_form/auth_submit_button.dart';
@@ -83,11 +85,30 @@ class _SignUpScreenState extends State<SignUpScreen> {
       if (!mounted) return;
 
       // Navigation added once TaskListScreen exists
+    } on FirebaseAuthException catch (e) {
+      // Duplicate emails land here: Firebase throws 'email-already-in-use',
+      // which AuthErrorTranslator turns into a readable message.
+      if (!mounted) return;
+      _showError(AuthErrorTranslator.translate(e));
+    } catch (e) {
+      // Catch-all for anything unexpected (e.g. no internet connection).
+      if (!mounted) return;
+      _showError('Something went wrong. Please try again.');
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
       }
     }
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.redAccent,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   @override
