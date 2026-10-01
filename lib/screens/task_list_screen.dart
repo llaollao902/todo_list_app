@@ -22,7 +22,6 @@ class TaskListScreen extends StatefulWidget {
   State<TaskListScreen> createState() => _TaskListScreenState();
 }
 
-// The main screen of the app, showing the list of tasks and the filter/sort bar.
 class _TaskListScreenState extends State<TaskListScreen> {
   void _onTagChanged(TaskTag? tag) {
     context.read<TaskProvider>().setTagFilter(tag);
