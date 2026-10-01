@@ -35,6 +35,18 @@ class _SignUpScreenState extends State<SignUpScreen> {
     return null; // null means "valid"
   }
 
+  String? _validateEmail(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Please enter your email address.';
+    }
+    // Simple format check: catches input like "maya.lin" with no "@domain".
+    final emailPattern = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
+    if (!emailPattern.hasMatch(value.trim())) {
+      return 'Please enter a valid email address.';
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -79,6 +91,17 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       icon: Icons.badge_outlined,
                       controller: _displayNameController,
                       validator: _validateDisplayName,
+                    ),
+                    const SizedBox(height: 16),
+
+                    // --- Email ---
+                    AuthTextField(
+                      label: 'Email',
+                      hint: 'maya.lin@domain.com',
+                      icon: Icons.mail_outline,
+                      controller: _emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      validator: _validateEmail,
                     ),
                     const SizedBox(height: 16),
                   ],
