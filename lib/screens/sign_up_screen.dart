@@ -1,13 +1,13 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-
 import '../services/auth_service.dart';
 import '../utils/auth_error_translator.dart';
 import '../utils/constants.dart';
 import '../widgets/auth_form/auth_password_field.dart';
 import '../widgets/auth_form/auth_submit_button.dart';
 import '../widgets/auth_form/auth_text_field.dart';
+import 'package:flutter/gestures.dart'; 
+
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -35,7 +35,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
   }
 
   // --- Field-level validators ---
-  // These run client-side, instantly, before any network request.
+  // These run client-side, instantly, before any network request —
+  // catching obvious mistakes (empty fields, bad email format, short
+  // password) without waiting on Firebase.
 
   String? _validateDisplayName(String? value) {
     if (value == null || value.trim().isEmpty) {
@@ -48,7 +50,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
     if (value == null || value.trim().isEmpty) {
       return 'Please enter your email address.';
     }
-    // Simple format check: catches input like "maya.lin" with no "@domain".
+    // Simple email format check — not exhaustive, but catches
+    // obviously malformed input like "maya.lin" with no "@domain".
     final emailPattern = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
     if (!emailPattern.hasMatch(value.trim())) {
       return 'Please enter a valid email address.';
@@ -68,8 +71,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   // --- Submit handler ---
   Future<void> _handleCreateAccount() async {
-    // Validate all three fields at once. If any fail, their error
-    // messages appear automatically under each field.
+    // Trigger validation on all three fields at once. If any fail,
+    // their error messages appear automatically under each field —
+    // we don't need to display them ourselves.
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -85,10 +89,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
       if (!mounted) return;
 
-      // Navigation added once TaskListScreen exists
+      // Account created and the user is now signed in (Firebase does
+      // this automatically). Navigate into the app, replacing this
+      // screen so the user can't go "back" into the sign-up form.
     } on FirebaseAuthException catch (e) {
-      // Duplicate emails land here: Firebase throws 'email-already-in-use',
-      // which AuthErrorTranslator turns into a readable message.
+      // This is where duplicate emails get caught: Firebase throws
+      // 'email-already-in-use' here, which AuthErrorTranslator turns
+      // into a readable message.
       if (!mounted) return;
       _showError(AuthErrorTranslator.translate(e));
     } catch (e) {
@@ -127,6 +134,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
+                    // --- Heading ---
                     const Text(
                       'Begin your quiet space.',
                       textAlign: TextAlign.center,
@@ -141,11 +149,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     const Text(
                       'A calm place to organize your days and cultivate mindful focus.',
                       textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: AppColors.subtext,
-                        height: 1.4,
-                      ),
+                      style: TextStyle(fontSize: 13, color: AppColors.subtext, height: 1.4),
                     ),
                     const SizedBox(height: 28),
 
@@ -161,7 +165,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
                     // --- Email ---
                     AuthTextField(
-                      label: 'Email',
+                      label: 'Username or Email',
                       hint: 'maya.lin@domain.com',
                       icon: Icons.mail_outline,
                       controller: _emailController,
@@ -191,10 +195,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     RichText(
                       text: TextSpan(
                         text: 'Already have an account? ',
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: AppColors.subtext,
-                        ),
+                        style: const TextStyle(fontSize: 13, color: AppColors.subtext),
                         children: [
                           TextSpan(
                             text: 'Sign in',
