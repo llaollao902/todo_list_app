@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 import '../services/auth_service.dart';
@@ -185,6 +186,33 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       onPressed: _handleCreateAccount,
                     ),
                     const SizedBox(height: 20),
+
+                    // --- Sign in link ---
+                    RichText(
+                      text: TextSpan(
+                        text: 'Already have an account? ',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: AppColors.subtext,
+                        ),
+                        children: [
+                          TextSpan(
+                            text: 'Sign in',
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.heading,
+                              decoration: TextDecoration.underline,
+                            ),
+                            recognizer: TapGestureRecognizer()
+                              ..onTap = () {
+                                // TODO: Navigator.push to SignInScreen
+                                // once that screen is built
+                              },
+                          ),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               ),
