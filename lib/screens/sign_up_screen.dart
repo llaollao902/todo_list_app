@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../utils/constants.dart';
+import '../widgets/auth_form/auth_text_field.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -22,6 +23,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  // --- Field-level validators ---
+  // These run client-side, instantly, before any network request.
+
+  String? _validateDisplayName(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Please enter your name.';
+    }
+    return null; // null means "valid"
   }
 
   @override
@@ -60,6 +71,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       ),
                     ),
                     const SizedBox(height: 28),
+
+                    // --- Display Name ---
+                    AuthTextField(
+                      label: 'Display Name',
+                      hint: 'Maya Lin',
+                      icon: Icons.badge_outlined,
+                      controller: _displayNameController,
+                      validator: _validateDisplayName,
+                    ),
+                    const SizedBox(height: 16),
                   ],
                 ),
               ),
