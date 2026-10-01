@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../utils/constants.dart';
+import '../widgets/auth_form/auth_password_field.dart';
 import '../widgets/auth_form/auth_text_field.dart';
 
 class SignUpScreen extends StatefulWidget {
@@ -43,6 +44,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
     final emailPattern = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
     if (!emailPattern.hasMatch(value.trim())) {
       return 'Please enter a valid email address.';
+    }
+    return null;
+  }
+
+  String? _validatePassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Please enter a password.';
+    }
+    if (value.length < 8) {
+      return 'Password must be at least 8 characters.';
     }
     return null;
   }
@@ -104,6 +115,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       validator: _validateEmail,
                     ),
                     const SizedBox(height: 16),
+
+                    // --- Password ---
+                    AuthPasswordField(
+                      label: 'Password',
+                      hint: 'At least 8 characters',
+                      controller: _passwordController,
+                      validator: _validatePassword,
+                    ),
+                    const SizedBox(height: 28),
                   ],
                 ),
               ),
