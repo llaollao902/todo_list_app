@@ -16,7 +16,7 @@ class ProfileAvatarHeader extends StatelessWidget {
     required this.memberSince,
   });
 
-  // Derives initials from the display name, e.g. "Maya Lin" -> "ML".
+  // Derives initials from the display name, e.g. "Juan Dela Cruz" -> "JD".
   // Falls back to "?" if the name is somehow empty.
   String get _initials {
     final parts = displayName.trim().split(RegExp(r'\s+'));

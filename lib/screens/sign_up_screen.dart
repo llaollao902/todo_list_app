@@ -53,7 +53,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       return 'Please enter your email address.';
     }
     // Simple email format check — not exhaustive, but catches
-    // obviously malformed input like "maya.lin" with no "@domain".
+    // obviously malformed input like "juan.delacruz" with no "@domain".
     final emailPattern = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
     if (!emailPattern.hasMatch(value.trim())) {
       return 'Please enter a valid email address.';
@@ -173,7 +173,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     // --- Display Name ---
                     AuthTextField(
                       label: 'Display Name',
-                      hint: 'Maya Lin',
+                      hint: 'Juan Dela Cruz',
                       icon: Icons.badge_outlined,
                       controller: _displayNameController,
                       validator: _validateDisplayName,
@@ -183,7 +183,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     // --- Email ---
                     AuthTextField(
                       label: 'Username',
-                      hint: 'maya_lin',
+                      hint: 'juan_dela_cruz',
                       icon: Icons.alternate_email,
                       controller: _usernameController,
                       validator: _validateUsername,
@@ -193,7 +193,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     // --- Email ---
                     AuthTextField(
                       label: 'Email Address',
-                      hint: 'maya.lin@domain.com',
+                      hint: 'juan.delacruz@domain.com',
                       icon: Icons.mail_outline,
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,

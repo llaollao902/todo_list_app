@@ -140,7 +140,7 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
                     const SizedBox(height: 24),
                     AuthTextField(
                       label: 'Username or Email',
-                      hint: 'maya_lin or maya.lin@domain.com',
+                      hint: 'juan_dela_cruz or juan.delacruz@domain.com',
                       icon: Icons.person_outline,
                       controller: _identifierController,
                       keyboardType: TextInputType.emailAddress,

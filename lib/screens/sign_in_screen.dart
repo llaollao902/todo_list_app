@@ -122,7 +122,7 @@ class _SignInScreenState extends State<SignInScreen> {
                     const SizedBox(height: 28),
                     AuthTextField(
                       label: 'Username or Email',
-                      hint: 'maya_lin or maya.lin@domain.com',
+                      hint: 'juan_dela_cruz or juan.delacruz@domain.com',
                       icon: Icons.person_outline,
                       controller: _identifierController,
                       keyboardType: TextInputType.emailAddress,
