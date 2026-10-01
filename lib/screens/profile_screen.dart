@@ -9,9 +9,12 @@ import '../widgets/auth_form/auth_submit_button.dart';
 import '../widgets/auth_form/auth_text_field.dart';
 import '../widgets/profile/profile_avatar_header.dart';
 import '../widgets/profile/section_header.dart';
+import 'task_list_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key});
+  const ProfileScreen({super.key, this.onBackToTasks});
+
+  final VoidCallback? onBackToTasks;
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -206,7 +209,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.heading),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () {
+            final navigator = Navigator.of(context);
+            if (navigator.canPop()) {
+              navigator.pop();
+            } else {
+              widget.onBackToTasks?.call();
+            }
+          },
         ),
         title: const Text(
           'Account Settings',

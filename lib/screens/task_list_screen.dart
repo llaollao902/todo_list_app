@@ -98,6 +98,8 @@ class _TaskListScreenState extends State<TaskListScreen> {
   Future<void> _logOut() async {
     try {
       await AuthService().signOut();
+      if (!mounted) return;
+      Navigator.of(context).popUntil((route) => route.isFirst);
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
