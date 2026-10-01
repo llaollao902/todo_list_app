@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../services/auth_service.dart';
 import '../utils/constants.dart';
 import '../widgets/auth_form/auth_password_field.dart';
 import '../widgets/auth_form/auth_submit_button.dart';
@@ -14,6 +15,7 @@ class SignUpScreen extends StatefulWidget {
 
 class _SignUpScreenState extends State<SignUpScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _authService = AuthService();
 
   final _displayNameController = TextEditingController();
   final _emailController = TextEditingController();
@@ -69,7 +71,23 @@ class _SignUpScreenState extends State<SignUpScreen> {
       return;
     }
 
-    // Firebase call added in next commit
+    setState(() => _isLoading = true);
+
+    try {
+      await _authService.signUp(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+        displayName: _displayNameController.text.trim(),
+      );
+
+      if (!mounted) return;
+
+      // Navigation added once TaskListScreen exists
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
   @override
