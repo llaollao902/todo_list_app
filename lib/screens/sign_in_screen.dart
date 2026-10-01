@@ -7,6 +7,7 @@ import '../utils/constants.dart';
 import '../widgets/auth_form/auth_password_field.dart';
 import '../widgets/auth_form/auth_submit_button.dart';
 import '../widgets/auth_form/auth_text_field.dart';
+import 'password_recovery_screen.dart';
 import 'sign_up_screen.dart';
 
 class SignInScreen extends StatefulWidget {
@@ -133,6 +134,25 @@ class _SignInScreenState extends State<SignInScreen> {
                       hint: 'Your password',
                       controller: _passwordController,
                       validator: _validatePassword,
+                    ),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => PasswordRecoveryScreen(
+                                initialIdentifier: _identifierController.text
+                                    .trim(),
+                              ),
+                            ),
+                          );
+                        },
+                        style: TextButton.styleFrom(
+                          foregroundColor: AppColors.heading,
+                        ),
+                        child: const Text('Forgot password?'),
+                      ),
                     ),
                     const SizedBox(height: 28),
                     AuthSubmitButton(
