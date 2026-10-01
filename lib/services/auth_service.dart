@@ -70,30 +70,39 @@ class AuthService {
     required String identifier,
     required String password,
   }) async {
-    final trimmedIdentifier = identifier.trim();
-    var email = trimmedIdentifier;
-
-    if (!trimmedIdentifier.contains('@')) {
-      final username = _normalizeUsername(trimmedIdentifier);
-      if (!_isValidUsername(username)) {
-        throw FirebaseAuthException(code: 'invalid-username');
-      }
-
-      final usernameSnapshot = await _firestore
-          .collection('usernames')
-          .doc(username)
-          .get();
-      final accountEmail = usernameSnapshot.data()?['email'];
-      if (!usernameSnapshot.exists || accountEmail is! String) {
-        throw FirebaseAuthException(code: 'user-not-found');
-      }
-      email = accountEmail;
-    }
+    final email = await _resolveEmailForIdentifier(identifier);
 
     return await _firebaseAuth.signInWithEmailAndPassword(
       email: email,
       password: password,
     );
+  }
+
+  Future<void> sendPasswordResetEmailForIdentifier({
+    required String identifier,
+  }) async {
+    final email = await _resolveEmailForIdentifier(identifier);
+    await _firebaseAuth.sendPasswordResetEmail(email: email);
+  }
+
+  Future<String> _resolveEmailForIdentifier(String identifier) async {
+    final trimmedIdentifier = identifier.trim();
+    if (trimmedIdentifier.contains('@')) return trimmedIdentifier;
+
+    final username = _normalizeUsername(trimmedIdentifier);
+    if (!_isValidUsername(username)) {
+      throw FirebaseAuthException(code: 'invalid-username');
+    }
+
+    final usernameSnapshot = await _firestore
+        .collection('usernames')
+        .doc(username)
+        .get();
+    final accountEmail = usernameSnapshot.data()?['email'];
+    if (!usernameSnapshot.exists || accountEmail is! String) {
+      throw FirebaseAuthException(code: 'user-not-found');
+    }
+    return accountEmail;
   }
 
   //   1. Create the account (email + password)
