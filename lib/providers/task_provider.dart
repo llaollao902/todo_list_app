@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/task.dart';
 import '../services/task_service.dart';
 import '../utils/constants.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 // ChangeNotifier is Flutter's built-in "observable" class.
 // Whenever we call notifyListeners(), every widget listening to this
@@ -19,7 +20,8 @@ class TaskProvider extends ChangeNotifier {
 
   // Holds the subscription to the Firestore stream so we can cancel
   // it later (in dispose()) and avoid memory leaks.
-  StreamSubscription<List<Task>>? _subscription;
+  StreamSubscription<List<Task>>? _tasksSubscription;
+  StreamSubscription<User?>? _authSubscription;
 
   // --- Filter/sort state ---
   TaskTag? selectedTagFilter;
@@ -34,8 +36,29 @@ class TaskProvider extends ChangeNotifier {
   static const Duration _deleteUndoDuration = Duration(seconds: 4);
 
   TaskProvider() {
-    // Start listening to Firestore the moment this provider is created.
-    _listenToTasks();
+    // Re-run whenever someone signs in or out
+    _authSubscription =
+        FirebaseAuth.instance.authStateChanges().listen(_onAuthChanged);
+  }
+
+  void _onAuthChanged(User? user) {
+    // Drop the previous user's stream and data immediately
+    _tasksSubscription?.cancel();
+    _tasksSubscription = null;
+    _allTasks = [];
+
+    if (user != null) {
+      // only this user's tasks are requested from firestore
+      _tasksSubscription = _taskService.getTasks(user.uid).listen(
+        (tasks) {
+          _allTasks = tasks;
+          notifyListeners();
+        },
+        onError: (Object error) {
+          debugPrint('Task stream error: $error');
+        },
+      );
+    }
   }
 
   void _listenToTasks() {
