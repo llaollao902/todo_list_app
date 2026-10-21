@@ -47,8 +47,10 @@ class TaskProvider extends ChangeNotifier {
     _tasksSubscription = null;
     _allTasks = [];
 
+    // if it is not null, someone just successfully logged in
     if (user != null) {
       // only this user's tasks are requested from firestore
+      // subscribing to the new user's tasks
       _tasksSubscription = _taskService.getTasks(user.uid).listen(
         (tasks) {
           _allTasks = tasks;
