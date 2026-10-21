@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 
 // Provides access to the app's Firebase Authentication state.
 class AuthService {
@@ -36,16 +37,27 @@ class AuthService {
     user = currentUser;
     if (user == null || user.email == null) return;
 
+    // refresh the id token so any rule that reads request.auth.token.email
+    // sees the new address, not the old one
+    await user.getIdToken(true);
+
     final snap = await _firestore
       .collection('usernames')
       .where('uid', isEqualTo: user.uid)
       .limit(1)
       .get();
-    if (snap.docs.isEmpty) return;
+    if (snap.docs.isEmpty) {
+      debugPrint('syncUsernameEmail: no usernames doc for ${user.uid}');
+      return;
+    }
 
     final doc = snap.docs.first;
+    debugPrint('syncUsernameEmail: auth=${user.email} '
+        'firestore=${doc.data()['email']}');
+
     if (doc.data()['email'] != user.email) {
       await doc.reference.update({'email': user.email});
+      debugPrint('syncUsernameEmail: updated');
     }
   }
 
@@ -111,7 +123,9 @@ class AuthService {
     // a failed sync must never block the user from signing in.
     try {
       await syncUsernameEmail();
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('syncUsernameEmail failed: $e');
+    }
 
     return credential;
   }

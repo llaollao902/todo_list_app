@@ -59,8 +59,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       await _authService.syncUsernameEmail();
       username = await _authService.getUsernameForCurrentUser();
-    } catch (_) {
-      // Keep the profile usable if the username mapping cannot be loaded.
+    } catch (e) {
+      debugPrint('syncUsernameEmail failed: $e');
     }
 
     if (!mounted) return;
