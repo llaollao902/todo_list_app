@@ -41,12 +41,11 @@ class TaskService {
   }
 
   Future<void> addTask(Task task) async {
-    // the service decides the owner, never the UI
-    final owned = task.copyWith(ownerId: _currentUid);
-    await _firestore
-        .collection(_collectionName)
-        .doc(owned.id)
-        .set(owned.toMap(), SetOptions(merge: true));
+    // Let Firestore generate the document ID so it can 
+    // never collide with another user's task
+    final ref = _firestore.collection(_collectionName).doc();
+    final owned = task.copyWith(id: ref.id, ownerId: _currentUid);
+    await ref.set(owned.toMap());
   }
 
   Future<void> updateTask(Task task) async {
