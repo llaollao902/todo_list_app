@@ -48,14 +48,17 @@ class AuthService {
       final newSnapshot = await transaction.get(newRef);
       final oldSnapshot = oldRef == null ? null : await transaction.get(oldRef);
 
+      // if the new username is already taken by another user, throw an error.
       if (newSnapshot.exists && newSnapshot.data()?['uid'] != user.uid) {
         throw FirebaseAuthException(code: 'username-already-in-use');
       }
 
+      // if the old username is not owned by the current user, throw an error.
       if (oldRef != null && oldSnapshot?.data()?['uid'] == user.uid) {
         transaction.delete(oldRef);
       }
 
+      // if the new username is available, create it.
       transaction.set(newRef, {'uid': user.uid, 'email': user.email});
     });
   }
@@ -70,6 +73,7 @@ class AuthService {
     required String identifier,
     required String password,
   }) async {
+    // If the identifier contains an '@', treat it as an email address.
     final email = await _resolveEmailForIdentifier(identifier);
 
     return await _firebaseAuth.signInWithEmailAndPassword(
@@ -94,11 +98,14 @@ class AuthService {
       throw FirebaseAuthException(code: 'invalid-username');
     }
 
+    // Look up the username in Firestore to find the associated email.
     final usernameSnapshot = await _firestore
         .collection('usernames')
         .doc(username)
         .get();
     final accountEmail = usernameSnapshot.data()?['email'];
+
+    // If the username doesn't exist or the email is not a string, throw an error.
     if (!usernameSnapshot.exists || accountEmail is! String) {
       throw FirebaseAuthException(code: 'user-not-found');
     }
@@ -118,6 +125,7 @@ class AuthService {
       throw FirebaseAuthException(code: 'invalid-username');
     }
 
+    // create the account with email and password
     final credential = await _firebaseAuth.createUserWithEmailAndPassword(
       email: email,
       password: password,
@@ -136,15 +144,18 @@ class AuthService {
           .collection('usernames')
           .doc(normalizedUsername);
 
+      // Use a transaction to ensure that the username is unique and not already taken.
       await _firestore.runTransaction((transaction) async {
         final existingUsername = await transaction.get(usernameRef);
         if (existingUsername.exists) {
           throw FirebaseAuthException(code: 'username-already-in-use');
         }
-
+        
+        // If the username is available, create it and associate it with the new user's UID and email.
         transaction.set(usernameRef, {'uid': user.uid, 'email': user.email});
       });
     } catch (_) {
+      // if it fails, delete the newly created user to avoid leaving a partially created account.
       try {
         await user.delete();
       } catch (_) {
@@ -166,10 +177,12 @@ class AuthService {
       username.trim().toLowerCase();
 
   static bool _isValidUsername(String username) =>
+      // must be 3-20 characters long, only lowercase letters, numbers, and underscores
       RegExp(r'^[a-z0-9_]{3,20}$').hasMatch(username);
 
   // Sign out
   Future<void> signOut() async {
+    // Sign out from Firebase Authentication
     await _firebaseAuth.signOut();
   }
 }
