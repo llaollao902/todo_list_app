@@ -5,7 +5,6 @@ import 'package:provider/provider.dart';
 
 import 'firebase_options.dart';
 import 'providers/task_provider.dart';
-import 'screens/profile_screen.dart';
 import 'screens/sign_in_screen.dart';
 import 'utils/constants.dart';
 import 'screens/task_list_screen.dart';
@@ -54,13 +53,7 @@ class AuthGate extends StatelessWidget {
         }
 
         if (snapshot.hasData) {
-          return ProfileScreen(
-            onBackToTasks: () {
-              Navigator.of(
-                context,
-              ).push(MaterialPageRoute(builder: (_) => const TaskListScreen()));
-            },
-          );
+          return const TaskListScreen();
         }
 
         return const SignInScreen();
