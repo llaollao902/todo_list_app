@@ -25,10 +25,12 @@ class TaskService {
     return user.uid;
   }
 
-  Stream<List<Task>> getTasks() {
+  // Only returns tasks whose ownerId matches the given user.
+  // TaskProvider already sorts locally so no order by.
+  Stream<List<Task>> getTasks(String ownerId) {
     return _firestore
         .collection(_collectionName)
-        .orderBy('createdAt', descending: true)
+        .where('ownerId', isEqualTo: ownerId)
         .snapshots()
         .map((snapshot) => snapshot.docs
             .map((doc) => Task.fromMap({
@@ -39,10 +41,12 @@ class TaskService {
   }
 
   Future<void> addTask(Task task) async {
+    // the service decides the owner, never the UI
+    final owned = task.copyWith(ownerId: _currentUid);
     await _firestore
         .collection(_collectionName)
-        .doc(task.id)
-        .set(task.toMap(), SetOptions(merge: true));
+        .doc(owned.id)
+        .set(owned.toMap(), SetOptions(merge: true));
   }
 
   Future<void> updateTask(Task task) async {
