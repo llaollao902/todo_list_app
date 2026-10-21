@@ -22,6 +22,33 @@ class AuthService {
     return usernames.docs.isEmpty ? null : usernames.docs.first.id;
   }
 
+  // Keeps usernames/{username}.email in step with the email in Firebase Auth.
+  // verifyBeforeUpdateEmail only changes the Auth email after the user clicks
+  // the verification link, so we compare and fix it later, when the user is
+  // back in the app
+
+  Future<void> syncUsernameEmail() async {
+    var user = currentUser;
+    if (user == null) return;
+
+    // pull the latest auth data so user.email reflects a verified change.
+    await user.reload();
+    user = currentUser;
+    if (user == null || user.email == null) return;
+
+    final snap = await _firestore
+      .collection('usernames')
+      .where('uid', isEqualTo: user.uid)
+      .limit(1)
+      .get();
+    if (snap.docs.isEmpty) return;
+
+    final doc = snap.docs.first;
+    if (doc.data()['email'] != user.email) {
+      await doc.reference.update({'email': user.email});
+    }
+  }
+
   Future<void> updateUsername({
     required String currentUsername,
     required String newUsername,
@@ -76,10 +103,17 @@ class AuthService {
     // If the identifier contains an '@', treat it as an email address.
     final email = await _resolveEmailForIdentifier(identifier);
 
-    return await _firebaseAuth.signInWithEmailAndPassword(
+    final credential =  await _firebaseAuth.signInWithEmailAndPassword(
       email: email,
       password: password,
     );
+
+    // a failed sync must never block the user from signing in.
+    try {
+      await syncUsernameEmail();
+    } catch (_) {}
+
+    return credential;
   }
 
   Future<void> sendPasswordResetEmailForIdentifier({

@@ -57,6 +57,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _loadUsername() async {
     String? username;
     try {
+      await _authService.syncUsernameEmail();
       username = await _authService.getUsernameForCurrentUser();
     } catch (_) {
       // Keep the profile usable if the username mapping cannot be loaded.
