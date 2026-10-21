@@ -63,16 +63,6 @@ class TaskProvider extends ChangeNotifier {
     }
   }
 
-  void _listenToTasks() {
-    // .listen() runs this callback EVERY time Firestore's data changes
-    // — not just once. That's what makes the UI "live": add a task from
-    // another device, and it appears here automatically.
-    _subscription = _taskService.getTasks().listen((tasks) {
-      _allTasks = tasks;
-      notifyListeners(); // tells every listening widget to rebuild
-    });
-  }
-
   // --- Public getter: filtered + sorted list ---
   // Widgets read THIS, never _allTasks directly, so filtering/sorting
   // logic lives in exactly one place.
@@ -200,7 +190,9 @@ class TaskProvider extends ChangeNotifier {
   // to avoid memory leaks / listening after the widget tree is gone.
   @override
   void dispose() {
-    _subscription?.cancel();
+    _tasksSubscription?.cancel();
+    _authSubscription?.cancel();
+    _deleteUndoTimer?.cancel();
     super.dispose();
   }
 }
