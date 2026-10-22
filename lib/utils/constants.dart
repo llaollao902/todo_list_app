@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+// listId used for tasks that belong to a user's Personal List.
+const String kPersonalListId = 'personal';
+
 // enums for task priority and tags
 enum Priority { low, medium, high }
 enum TaskTag { school, personal, others }
