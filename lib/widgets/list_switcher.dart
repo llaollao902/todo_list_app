@@ -12,6 +12,9 @@ class ListSwitcher extends StatefulWidget {
   final ValueChanged<String> onSelected;
   final VoidCallback onNewList;
 
+  // null = hide the button (not the owner / Personal)
+  final VoidCallback? onAddMember; 
+
   const ListSwitcher({
     super.key,
     required this.lists,
@@ -19,6 +22,7 @@ class ListSwitcher extends StatefulWidget {
     required this.selectedTaskCount,
     required this.onSelected,
     required this.onNewList,
+    this.onAddMember,
   });
 
   @override
@@ -165,6 +169,28 @@ class _ListSwitcherState extends State<ListSwitcher> {
             ),
           ),
         ),
+        if (widget.onAddMember != null) ...[
+          const SizedBox(width: 8),
+          Tooltip(
+            message: 'Add member',
+            child: GestureDetector(
+              onTap: widget.onAddMember,
+              child: Container(
+                padding: const EdgeInsets.all(9),
+                decoration: BoxDecoration(
+                  color: AppColors.tagBadgeBg,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppColors.tagBadgeText),
+                ),
+                child: const Icon(
+                  Icons.person_add_alt_1,
+                  size: 16,
+                  color: AppColors.heading,
+                ),
+              ),
+            ),
+          ),
+        ],
       ],
     );
   }
