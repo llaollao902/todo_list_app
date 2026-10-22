@@ -77,7 +77,7 @@ class Task {
     return Task(
       id: id ?? this.id,
       ownerId: ownerId ?? this.ownerId,
-      listId: listId ?? this.title,
+      listId: listId ?? this.listId,
       title: title ?? this.title,
       dueDateTime: dueDateTime ?? this.dueDateTime,
       createdAt: createdAt ?? this.createdAt,
