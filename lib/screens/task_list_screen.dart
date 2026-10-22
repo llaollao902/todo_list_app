@@ -207,6 +207,8 @@ class _TaskListScreenState extends State<TaskListScreen> {
                     selectedTaskCount: provider.totalCount,
                     onSelected: _onListSelected,
                     onNewList: _createList,
+                    onAddMember:
+                        provider.canManageMembers ? _addMember : null,
                   ),
                   const SizedBox(height: 15),
 
