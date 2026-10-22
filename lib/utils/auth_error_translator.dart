@@ -8,7 +8,7 @@ class AuthErrorTranslator {
       case 'email-already-in-use':
         return 'An account already exists for that email address.';
       case 'weak-password':
-        return 'That password is too weak. Use at least 6 characters.';
+        return 'That password is too weak. Use at least 8 characters.';
       case 'invalid-email':
         return 'That email address doesn\'t look valid.';
       case 'operation-not-allowed':
