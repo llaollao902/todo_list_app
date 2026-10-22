@@ -168,6 +168,13 @@ class _TaskListScreenState extends State<TaskListScreen> {
                   _buildHeader(context),
 
                   const SizedBox(height: 15),
+                  ListSwitcher(
+                    lists: provider.lists,
+                    selectedListId: provider.selectedListId,
+                    onSelected: _onListSelected,
+                    onNewList: _createList,
+                  ),
+                  const SizedBox(height: 12),
                   FilterSortBar(
                     selectedTag: provider.selectedTagFilter,
                     selectedPriority: provider.selectedPriorityFilter,
