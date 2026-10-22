@@ -6,7 +6,7 @@ import '../models/task.dart';
 import '../providers/task_provider.dart';
 import '../services/auth_service.dart';
 import '../utils/constants.dart';
-import '../widgets/filter_sort_bar.dart';
+import '../widgets/filter_sort_sheet.dart'; 
 import '../widgets/list_header.dart';
 import '../widgets/task_tile.dart';
 import 'form_task_screen.dart';
@@ -26,18 +26,29 @@ class TaskListScreen extends StatefulWidget {
 }
 
 class _TaskListScreenState extends State<TaskListScreen> {
-  void _onTagChanged(TaskTag? tag) {
-    context.read<TaskProvider>().setTagFilter(tag);
+    Future<void> _openFilterSheet() async {
+    final provider = context.read<TaskProvider>();
+
+    final result = await FilterSortSheet.show(
+      context,
+      tag: provider.selectedTagFilter,
+      priority: provider.selectedPriorityFilter,
+      sort: provider.selectedSort,
+    );
+
+    if (result == null || !mounted) return;
+
+    provider.setTagFilter(result.tag);
+    provider.setPriorityFilter(result.priority);
+    provider.setSort(result.sort);
   }
 
-  void _onPriorityChanged(Priority? priority) {
-    context.read<TaskProvider>().setPriorityFilter(priority);
-  }
-
-  void _onSortChanged(String? sortOption) {
-    if (sortOption != null) {
-      context.read<TaskProvider>().setSort(sortOption);
-    }
+  int _activeFilterCount(TaskProvider provider) {
+    var count = 0;
+    if (provider.selectedTagFilter != null) count++;
+    if (provider.selectedPriorityFilter != null) count++;
+    if (provider.selectedSort != 'Date added') count++;
+    return count;
   }
 
   // updates the selected task list through the TaskProvider
@@ -165,32 +176,25 @@ class _TaskListScreenState extends State<TaskListScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildHeader(context),
+                                    _buildHeader(context),
 
                   const SizedBox(height: 15),
                   ListSwitcher(
                     lists: provider.lists,
                     selectedListId: provider.selectedListId,
+                    selectedTaskCount: provider.totalCount,
                     onSelected: _onListSelected,
                     onNewList: _createList,
                   ),
-                  const SizedBox(height: 12),
-                  FilterSortBar(
-                    selectedTag: provider.selectedTagFilter,
-                    selectedPriority: provider.selectedPriorityFilter,
-                    selectedSort: provider.selectedSort,
-                    onTagChanged: _onTagChanged,
-                    onPriorityChanged: _onPriorityChanged,
-                    onSortChanged: _onSortChanged,
-                  ),
                   const SizedBox(height: 15),
 
-                  // "Your list · N" / "N completed" — sits inside the
-                  // pinned section, right above the scrollable list.
+                  // "Your list · N" / "N completed" on the left,
+                  // Filter button on the right.
                   ListHeader(
-                    title: provider.selectedList?.name ?? 'Your list',
                     totalCount: tasks.length,
                     completedCount: completedCount,
+                    activeFilterCount: _activeFilterCount(provider),
+                    onFilterTap: _openFilterSheet,
                   ),
                 ],
               ),

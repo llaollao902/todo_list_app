@@ -3,10 +3,12 @@ import 'package:flutter/material.dart';
 import '../models/task_list.dart';
 import '../utils/constants.dart';
 
-// Displays available task lists and allows the user to switch between them.
-class ListSwitcher extends StatelessWidget {
+// Compact row: a dropdown pill showing the current list (tap to switch)
+// and a dashed "+ New list" pill.
+class ListSwitcher extends StatefulWidget {
   final List<TaskList> lists;
   final String selectedListId;
+  final int selectedTaskCount; // task count of the currently open list
   final ValueChanged<String> onSelected;
   final VoidCallback onNewList;
 
@@ -14,113 +16,195 @@ class ListSwitcher extends StatelessWidget {
     super.key,
     required this.lists,
     required this.selectedListId,
+    required this.selectedTaskCount,
     required this.onSelected,
     required this.onNewList,
   });
 
   @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 36,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        children: [
-          // Personal is a built-in list, separate from user-created lists.
-          _Pill(
-            label: 'Personal',
-            icon: Icons.person_outline,
-            selected: selectedListId == kPersonalListId,
-            onTap: () => onSelected(kPersonalListId),
-          ),
+  State<ListSwitcher> createState() => _ListSwitcherState();
+}
 
-          // Display each custom list and highlight the currently selected one.
-          ...lists.map(
-            (list) => _Pill(
-              label: list.name,
-              icon: Icons.group_outlined,
-              selected: selectedListId == list.id,
-              onTap: () => onSelected(list.id),
+class _ListSwitcherState extends State<ListSwitcher> {
+  // True while the dropdown menu is showing, so the arrow can point up.
+  bool _menuOpen = false;
+
+  String get _currentLabel {
+    if (widget.selectedListId == kPersonalListId) return 'Personal';
+    for (final list in widget.lists) {
+      if (list.id == widget.selectedListId) return list.name;
+    }
+    return 'Personal';
+  }
+
+  String _countLabel(int count) => count == 1 ? '1 task' : '$count tasks';
+
+  PopupMenuItem<String> _menuItem(String id, String label) {
+    final selected = id == widget.selectedListId;
+    return PopupMenuItem<String>(
+      value: id,
+      height: 44,
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                color: AppColors.heading,
+              ),
             ),
           ),
-
-          // Opens the flow for creating a new list.
-          _Pill(
-            label: 'New list',
-            icon: Icons.add,
-            selected: false,
-            highlighted: true,
-            onTap: onNewList,
-          ),
+          // Only the open list has a known count.
+          if (selected) ...[
+            const SizedBox(width: 16),
+            Text(
+              _countLabel(widget.selectedTaskCount),
+              style: const TextStyle(
+                fontSize: 11,
+                color: AppColors.tagBadgeText,
+              ),
+            ),
+          ],
         ],
       ),
     );
   }
-}
-
-// Reusable pill-shaped button for selecting a list or creating a new one.
-class _Pill extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final bool selected;
-  final bool highlighted;
-  final VoidCallback onTap;
-
-  const _Pill({
-    required this.label,
-    required this.icon,
-    required this.selected,
-    required this.onTap,
-    this.highlighted = false,
-  });
 
   @override
   Widget build(BuildContext context) {
-    // Selected pills use the heading color; the new-list pill has a softer fill.
-    final background = selected
-        ? AppColors.heading
-        : highlighted
-            ? AppColors.tagBadgeBg
-            : AppColors.cardBackground;
-
-    final foreground = selected
-        ? Colors.white
-        : highlighted
-            ? AppColors.tagBadgeText
-            : AppColors.heading;
-
-    return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          decoration: BoxDecoration(
-            color: background,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 14, color: foreground),
-              const SizedBox(width: 6),
-              // Prevents long list names from overflowing the pill.
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 140),
-                child: Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: foreground,
-                  ),
-                ),
-              ),
+    return Row(
+      children: [
+        // --- Dropdown pill ---
+        Flexible(
+          child: PopupMenuButton<String>(
+            onOpened: () => setState(() => _menuOpen = true),
+            onCanceled: () => setState(() => _menuOpen = false),
+            onSelected: (id) {
+              setState(() => _menuOpen = false);
+              widget.onSelected(id);
+            },
+            position: PopupMenuPosition.under,
+            offset: const Offset(0, 6),
+            constraints: const BoxConstraints(minWidth: 220, maxWidth: 280),
+            color: AppColors.cardBackground,
+            surfaceTintColor: Colors.transparent,
+            elevation: 6,
+            shadowColor: Colors.black.withValues(alpha: 0.15),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            itemBuilder: (_) => [
+              _menuItem(kPersonalListId, 'Personal'),
+              ...widget.lists.map((list) => _menuItem(list.id, list.name)),
             ],
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+              decoration: BoxDecoration(
+                color: AppColors.heading,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Flexible(
+                    child: Text(
+                      _currentLabel,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Icon(
+                    _menuOpen
+                        ? Icons.keyboard_arrow_up
+                        : Icons.keyboard_arrow_down,
+                    size: 16,
+                    color: Colors.white,
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
-      ),
+        const SizedBox(width: 8),
+
+        // --- Dashed "+ New list" pill ---
+        GestureDetector(
+          onTap: widget.onNewList,
+          child: CustomPaint(
+            painter: _DashedBorderPainter(
+              color: AppColors.subtext,
+              radius: 20,
+            ),
+            child: const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.add, size: 14, color: AppColors.heading),
+                  SizedBox(width: 4),
+                  Text(
+                    'New list',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.heading,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
+}
+
+// Draws a rounded dashed outline around its child.
+class _DashedBorderPainter extends CustomPainter {
+  final Color color;
+  final double radius;
+
+  const _DashedBorderPainter({required this.color, required this.radius});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    const dashLength = 5.0;
+    const gapLength = 3.5;
+
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2;
+
+    final path = Path()
+      ..addRRect(
+        RRect.fromRectAndRadius(Offset.zero & size, Radius.circular(radius)),
+      );
+
+    for (final metric in path.computeMetrics()) {
+      double distance = 0;
+      while (distance < metric.length) {
+        canvas.drawPath(
+          metric.extractPath(distance, distance + dashLength),
+          paint,
+        );
+        distance += dashLength + gapLength;
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(_DashedBorderPainter old) =>
+      old.color != color || old.radius != radius;
 }
