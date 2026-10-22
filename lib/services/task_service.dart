@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../models/task.dart';
+import '../utils/constants.dart';
 
 class TaskService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -27,17 +28,28 @@ class TaskService {
 
   // Only returns tasks whose ownerId matches the given user.
   // TaskProvider already sorts locally so no order by.
-  Stream<List<Task>> getTasks(String ownerId) {
-    return _firestore
-        .collection(_collectionName)
-        .where('ownerId', isEqualTo: ownerId)
-        .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => Task.fromMap({
-                  ...doc.data(),
-                  'id': doc.id,
-                }))
-            .toList());
+
+  // Personal: only my own tasks that are in the personal list
+  // Collab: every task in that list (the rules check the membership)
+  // streams personal tasks or collaborative list tasks in real-time
+  Stream<List<Task>> getTasks(
+    String ownerId, {
+    String listId = kPersonalListId,
+  }) {
+    // query personal task if matching ID, otherwise query the collab list
+    final Query<Map<String, dynamic>> query = listId == kPersonalListId
+        ? _firestore
+            .collection(_collectionName)
+            .where('ownerId', isEqualTo: ownerId)
+            .where('listId', isEqualTo: kPersonalListId)
+        : _firestore
+            .collection(_collectionName)
+            .where('listId', isEqualTo: listId);
+
+    // map firestore snapshot documents to a List<Task>
+    return query.snapshots().map((snapshot) => snapshot.docs
+        .map((doc) => Task.fromMap({...doc.data(), 'id': doc.id}))
+        .toList());
   }
 
   Future<void> addTask(Task task) async {
