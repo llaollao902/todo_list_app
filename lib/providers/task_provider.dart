@@ -18,6 +18,12 @@ class TaskProvider extends ChangeNotifier {
   // without needing to re-fetch from Firestore.
   List<Task> _allTasks = [];
 
+  // True until the first batch of tasks arrives from Firestore.
+  // The task list screen shows  a spinner while this is true
+
+  bool _isLoading = true;
+  bool get isLoading => _isLoading;
+
   // Holds the subscription to the Firestore stream so we can cancel
   // it later (in dispose()) and avoid memory leaks.
   StreamSubscription<List<Task>>? _tasksSubscription;
@@ -47,6 +53,15 @@ class TaskProvider extends ChangeNotifier {
     _tasksSubscription = null;
     _allTasks = [];
 
+    // don't carry one user's undo state or filters over to the next user
+    _deleteUndoTimer?.cancel();
+    _recentlyDeletedTask =null;
+    selectedTagFilter = null;
+    selectedPriorityFilter = null;
+    selectedSort = 'Date added';
+
+    _isLoading = user != null;
+
     // if it is not null, someone just successfully logged in
     if (user != null) {
       // only this user's tasks are requested from firestore
@@ -54,13 +69,18 @@ class TaskProvider extends ChangeNotifier {
       _tasksSubscription = _taskService.getTasks(user.uid).listen(
         (tasks) {
           _allTasks = tasks;
+          _isLoading = false;
           notifyListeners();
         },
         onError: (Object error) {
           debugPrint('Task stream error: $error');
+          _isLoading = false;
+          notifyListeners();
         },
       );
     }
+
+    notifyListeners();
   }
 
   // --- Public getter: filtered + sorted list ---
