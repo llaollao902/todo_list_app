@@ -93,5 +93,40 @@ class ListService {
     });
   }
 
+  // Turns a username or email into a Firebase Auth UID using the
+  // usernames collection (usernames/{username} -> { uid, email }).
+  Future<String> _resolveUid(String identifier) async {
+    final value = identifier.trim();
+    if (value.isEmpty) {
+      throw const ListException('Enter a username or email.');
+    }
 
+    Map<String, dynamic>? data;
+    if (value.contains('@')) {
+      // query by email if the input contains '@'
+      final query = await _firestore
+          .collection('usernames')
+          .where('email', isEqualTo: value.toLowerCase())
+          .limit(1)
+          .get();
+      if (query.docs.isNotEmpty) data = query.docs.first.data();
+    } else {
+      // otherwise, normalize and query directly by username document id
+      final username = AuthService.normalizeUsername(value);
+      if (!AuthService.isValidUsername(username)) {
+        throw const ListException(
+          'Use a username with 3-20 letters, numbers, or underscores.',
+        );
+      }
+      final doc = await _firestore.collection('usernames').doc(username).get();
+      data = doc.data();
+    }
+
+    // extract and validate the UID from the retrieved data
+    final uid = data?['uid'];
+    if (uid is! String) {
+      throw const ListException('No user found for that username or email.');
+    }
+    return uid;
+  }
 }
