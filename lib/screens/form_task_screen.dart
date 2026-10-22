@@ -106,6 +106,7 @@ class _FormTaskScreenState extends State<FormTaskScreen> {
     final result = Task(
       id: widget.task?.id ?? _generatePlaceholderId(),
       ownerId: widget.task?.ownerId ?? '',
+      listId: widget.task?.listId ?? kPersonalListId,
       title: _titleController.text.trim(),
       dueDateTime: _dueDateTime!,
       createdAt: widget.task?.createdAt ?? DateTime.now(),
