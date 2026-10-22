@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/task.dart';
+import '../models/task_list.dart';
+import '../services/list_service.dart';
 import '../services/task_service.dart';
 import '../utils/constants.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -11,6 +13,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 // core mechanic behind the Provider package.
 class TaskProvider extends ChangeNotifier {
   final TaskService _taskService = TaskService();
+  final ListService _listService = ListService(); 
+
+  // UID of the signed-in user (null when signed out).
+  String? _uid;
 
   // --- Raw data from Firestore ---
   // This is the FULL list of tasks, unfiltered. We keep it separate
@@ -24,9 +30,34 @@ class TaskProvider extends ChangeNotifier {
   bool _isLoading = true;
   bool get isLoading => _isLoading;
 
+  // --- collaborative lists ---
+  // Every collaborative list the user belongs to (owned or added to).
+  List<TaskList> _lists = [];
+  List<TaskList> get lists => List.unmodifiable(_lists);
+
+  // kPersonalListId = Personal list, otherwise a collaborative list's id.
+  String _selectedListId = kPersonalListId;
+  String get selectedListId => _selectedListId;
+  bool get isPersonalSelected => _selectedListId == kPersonalListId;
+
+  // The selected collaborative list, or null while Personal is selected.
+  TaskList? get selectedList {
+    for (final list in _lists) {
+      if (list.id == _selectedListId) return list;
+    }
+    return null;
+  }
+
+  // Only the owner of a collaborative list may add members.
+  bool get canManageMembers {
+    final list = selectedList;
+    return list != null && list.ownerId == _uid;
+  }
+
   // Holds the subscription to the Firestore stream so we can cancel
   // it later (in dispose()) and avoid memory leaks.
   StreamSubscription<List<Task>>? _tasksSubscription;
+  StreamSubscription<List<TaskList>>? _listsSubscription; 
   StreamSubscription<User?>? _authSubscription;
 
   // --- Filter/sort state ---
@@ -51,7 +82,14 @@ class TaskProvider extends ChangeNotifier {
     // Drop the previous user's stream and data immediately
     _tasksSubscription?.cancel();
     _tasksSubscription = null;
+    _listsSubscription?.cancel(); 
+    _listsSubscription = null; 
     _allTasks = [];
+
+    // never carry one user's lists or selection over to the next user
+    _lists = [];
+    _selectedListId = kPersonalListId;
+    _uid = user?.uid;
 
     // don't carry one user's undo state or filters over to the next user
     _deleteUndoTimer?.cancel();
@@ -66,21 +104,96 @@ class TaskProvider extends ChangeNotifier {
     if (user != null) {
       // only this user's tasks are requested from firestore
       // subscribing to the new user's tasks
-      _tasksSubscription = _taskService.getTasks(user.uid).listen(
-        (tasks) {
-          _allTasks = tasks;
-          _isLoading = false;
-          notifyListeners();
-        },
-        onError: (Object error) {
-          debugPrint('Task stream error: $error');
-          _isLoading = false;
-          notifyListeners();
-        },
-      );
+      _listenToLists(user.uid); 
+      _subscribeToTasks(user.uid); 
     }
 
     notifyListeners();
+  }
+
+  // streams every collaborative list whose memberIds contains this user.
+  // Lists the user was NOT added to are never returned.
+  void _listenToLists(String uid) {
+    _listsSubscription = _listService.getMyLists(uid).listen(
+      (lists) {
+        _lists = lists;
+
+        // If the selected list is gone (deleted, or the user was removed),
+        // fall back to Personal instead of showing a dead list.
+        if (!isPersonalSelected && selectedList == null) {
+          _selectedListId = kPersonalListId;
+          _subscribeToTasks(uid);
+        }
+
+        notifyListeners();
+      },
+      onError: (Object error) {
+        debugPrint('List stream error: $error');
+      },
+    );
+  }
+
+  // (re)subscribes to the tasks of the selected list. This is the
+  // same stream code that used to live inside _onAuthChanged, now also
+  // used whenever the user switches lists.
+  void _subscribeToTasks(String uid) {
+    _tasksSubscription?.cancel();
+    _allTasks = [];
+    _isLoading = true;
+
+    _tasksSubscription =
+        _taskService.getTasks(uid, listId: _selectedListId).listen(
+      (tasks) {
+        _allTasks = tasks;
+        _isLoading = false;
+        notifyListeners();
+      },
+      onError: (Object error) {
+        debugPrint('Task stream error: $error');
+        _isLoading = false;
+        notifyListeners();
+      },
+    );
+  }
+
+  // --- switching and managing lists ---
+
+  // Pass kPersonalListId for Personal, or a collaborative list's id.
+  void selectList(String listId) {
+    final uid = _uid;
+    if (uid == null || listId == _selectedListId) return;
+
+    // Ignore ids of lists this user does not belong to.
+    if (listId != kPersonalListId && !_lists.any((l) => l.id == listId)) {
+      return;
+    }
+
+    _selectedListId = listId;
+    _subscribeToTasks(uid);
+    notifyListeners();
+  }
+
+  // Creates a list owned by the current user and switches to it.
+  // Throws ListException with a user-friendly message on bad input.
+  Future<void> createList(String name) async {
+    final list = await _listService.createList(name);
+
+    // The lists stream may not have delivered the new list yet, so add it
+    // locally first; otherwise selectList() would ignore the unknown id.
+    if (!_lists.any((l) => l.id == list.id)) {
+      _lists = [..._lists, list];
+    }
+    selectList(list.id);
+  }
+
+  // Adds a user (by username or email) to the selected list.
+  // Throws ListException with a user-friendly message on failure.
+  Future<void> addMemberToSelectedList(String identifier) async {
+    final list = selectedList;
+    if (list == null || !canManageMembers) {
+      throw const ListException('Only the list owner can add members.');
+    }
+    await _listService.addMember(listId: list.id, identifier: identifier);
   }
 
   // --- Public getter: filtered + sorted list ---
@@ -153,10 +266,12 @@ class TaskProvider extends ChangeNotifier {
   // Firestore stream listener above does that automatically once
   // the change round-trips through the database.
 
+  // tasks always go into the list that is currently selected.
   Future<void> addTask(Task task) async {
-    await _taskService.addTask(task);
+    await _taskService.addTask(task.copyWith(listId: _selectedListId));
   }
 
+  // Edits keep the task's own listId (the form passes it through).
   Future<void> updateTask(Task task) async {
     await _taskService.updateTask(task);
   }
@@ -211,6 +326,7 @@ class TaskProvider extends ChangeNotifier {
   @override
   void dispose() {
     _tasksSubscription?.cancel();
+    _listsSubscription?.cancel(); 
     _authSubscription?.cancel();
     _deleteUndoTimer?.cancel();
     super.dispose();
