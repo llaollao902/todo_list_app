@@ -4,7 +4,8 @@ import '../utils/constants.dart';
 
 class Task {
   final String id;
-  final String ownerId;
+  final String ownerId; // uid for the user who created the task
+  final String listId; // kPersonalListId (collab list id)
   final String title;
   final DateTime dueDateTime;
   final DateTime createdAt;
@@ -15,6 +16,7 @@ class Task {
   Task({
     required this.id,
     required this.ownerId,
+    this.listId = kPersonalListId,
     required this.title,
     required this.dueDateTime,
     DateTime? createdAt,
@@ -29,7 +31,8 @@ class Task {
 
     return Task(
       id: map['id']?.toString() ?? '',
-      ownerId: map['ownerId']?.toString() ?? '', 
+      ownerId: map['ownerId']?.toString() ?? '',
+      listId: map['listId']?.toString() ?? kPersonalListId, 
       title: map['title']?.toString() ?? '',
       dueDateTime: (map['dueDateTime'] as Timestamp?)?.toDate() ?? DateTime.now(),
       createdAt: (map['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
@@ -49,6 +52,7 @@ class Task {
     return {
       'id': id,
       'ownerId': ownerId,
+      'listId': listId,
       'title': title,
       'dueDateTime': Timestamp.fromDate(dueDateTime),
       'createdAt': Timestamp.fromDate(createdAt),
@@ -62,6 +66,7 @@ class Task {
   Task copyWith({
     String? id,
     String? ownerId,
+    String? listId,
     String? title,
     DateTime? dueDateTime,
     DateTime? createdAt,
@@ -72,6 +77,7 @@ class Task {
     return Task(
       id: id ?? this.id,
       ownerId: ownerId ?? this.ownerId,
+      listId: listId ?? this.title,
       title: title ?? this.title,
       dueDateTime: dueDateTime ?? this.dueDateTime,
       createdAt: createdAt ?? this.createdAt,
