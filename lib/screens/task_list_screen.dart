@@ -188,6 +188,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
                   // "Your list · N" / "N completed" — sits inside the
                   // pinned section, right above the scrollable list.
                   ListHeader(
+                    title: provider.selectedList?.name ?? 'Your list',
                     totalCount: tasks.length,
                     completedCount: completedCount,
                   ),

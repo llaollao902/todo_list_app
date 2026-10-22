@@ -5,9 +5,11 @@ import '../utils/constants.dart';
 class ListHeader extends StatelessWidget {
   final int totalCount;
   final int completedCount;
+  final String title;
 
   const ListHeader({
     super.key,
+    this.title = 'Your List',
     required this.totalCount,
     required this.completedCount,
   });
@@ -19,7 +21,7 @@ class ListHeader extends StatelessWidget {
         const Icon(Icons.sort, size: 16, color: AppColors.subtext),
         const SizedBox(width: 6),
         Text(
-          'Your list · $totalCount',
+          '$title · $totalCount',
           style: const TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,
