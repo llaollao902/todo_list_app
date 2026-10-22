@@ -17,6 +17,7 @@ import '../widgets/undo_snackbar.dart';
 import '../services/list_service.dart';
 import '../widgets/list_switcher.dart';
 import '../widgets/new_list_dialog.dart';
+import '../widgets/add_member_dialog.dart';
 
 class TaskListScreen extends StatefulWidget {
   const TaskListScreen({super.key});
@@ -73,6 +74,27 @@ class _TaskListScreenState extends State<TaskListScreen> {
       // show a fallback message for unexpected errors
       if (!mounted) return;
       _showMessage('Unable to create the list. Please try again.');
+    }
+  }
+
+  // prompts for a username/email and adds that user to the selected list
+  Future<void> _addMember() async {
+    final provider = context.read<TaskProvider>();
+    final listName = provider.selectedList?.name ?? 'this list';
+
+    final identifier = await AddMemberDialog.show(context, listName: listName);
+    if (identifier == null || !mounted) return;
+
+    try {
+      await provider.addMemberToSelectedList(identifier);
+      if (!mounted) return;
+      _showMessage('Added to "$listName".');
+    } on ListException catch (e) {
+      if (!mounted) return;
+      _showMessage(e.message);
+    } catch (_) {
+      if (!mounted) return;
+      _showMessage('Unable to add that member. Please try again.');
     }
   }
 
