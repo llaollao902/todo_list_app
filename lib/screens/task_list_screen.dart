@@ -204,7 +204,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
                   ListSwitcher(
                     lists: provider.lists,
                     selectedListId: provider.selectedListId,
-                    selectedTaskCount: provider.totalCount,
+                    taskCounts: provider.taskCounts,
                     onSelected: _onListSelected,
                     onNewList: _createList,
                     onAddMember:

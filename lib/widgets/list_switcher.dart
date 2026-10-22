@@ -8,7 +8,7 @@ import '../utils/constants.dart';
 class ListSwitcher extends StatefulWidget {
   final List<TaskList> lists;
   final String selectedListId;
-  final int selectedTaskCount; // task count of the currently open list
+  final Map<String, int> taskCounts; // list id -> task count
   final ValueChanged<String> onSelected;
   final VoidCallback onNewList;
 
@@ -19,7 +19,7 @@ class ListSwitcher extends StatefulWidget {
     super.key,
     required this.lists,
     required this.selectedListId,
-    required this.selectedTaskCount,
+    required this.taskCounts,
     required this.onSelected,
     required this.onNewList,
     this.onAddMember,
@@ -43,8 +43,9 @@ class _ListSwitcherState extends State<ListSwitcher> {
 
   String _countLabel(int count) => count == 1 ? '1 task' : '$count tasks';
 
-  PopupMenuItem<String> _menuItem(String id, String label) {
+    PopupMenuItem<String> _menuItem(String id, String label) {
     final selected = id == widget.selectedListId;
+    final count = widget.taskCounts[id] ?? 0;
     return PopupMenuItem<String>(
       value: id,
       height: 44,
@@ -62,17 +63,14 @@ class _ListSwitcherState extends State<ListSwitcher> {
               ),
             ),
           ),
-          // Only the open list has a known count.
-          if (selected) ...[
-            const SizedBox(width: 16),
-            Text(
-              _countLabel(widget.selectedTaskCount),
-              style: const TextStyle(
-                fontSize: 11,
-                color: AppColors.tagBadgeText,
-              ),
+          const SizedBox(width: 16),
+          Text(
+            _countLabel(count),
+            style: const TextStyle(
+              fontSize: 11,
+              color: AppColors.tagBadgeText,
             ),
-          ],
+          ),
         ],
       ),
     );

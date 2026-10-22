@@ -55,8 +55,12 @@ class _NewListDialogState extends State<NewListDialog> {
         textCapitalization: TextCapitalization.sentences,
         onSubmitted: (_) => _submit(),
         decoration: const InputDecoration(
-          hintText: "e.g. Nikko's Group List",
+          labelText: 'List name',
+          labelStyle: TextStyle(color: AppColors.subtext),
+          floatingLabelStyle: TextStyle(color: AppColors.heading),
+          hintText: 'e.g. Group project',
           hintStyle: TextStyle(color: AppColors.subtext),
+          helperStyle: TextStyle(color: AppColors.subtext),
         ),
       ),
       actions: [
