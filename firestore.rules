@@ -33,7 +33,9 @@ service cloud.firestore {
                                'tag', 'isDone'])
         && data.id == taskId
         && data.listId is string
+        && data.ownerId is string
         && data.title is string && data.title.size() > 0
+        && data.title.size() <= 200
         && data.dueDateTime is timestamp
         && data.createdAt is timestamp
         && data.priority in ['low', 'medium', 'high']
