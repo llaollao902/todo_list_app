@@ -69,5 +69,29 @@ class ListService {
     return list;
   }
 
+  // Owner-only (enforced by the rules): add a user by username or email.
+  // adds a member to a specific task list using their identifier (email/username)
+  Future<void> addMember({
+    required String listId,
+    required String identifier,
+  }) async {
+    // resolve the given identifier to a unique user ID (UID)
+    final uid = await _resolveUid(identifier);
+
+    final ref = _lists.doc(listId);
+    final snapshot = await ref.get();
+    final members = List<String>.from(snapshot.data()?['memberIds'] ?? const []);
+
+    // check if the user is already a member of the list
+    if (members.contains(uid)) {
+      throw const ListException('That user is already in this list.');
+    }
+
+    // atomically add the new user's uid to the memberIds array in firestore
+    await ref.update({
+      'memberIds': FieldValue.arrayUnion([uid]),
+    });
+  }
+
 
 }
