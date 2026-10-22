@@ -203,7 +203,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
                     // --- Password ---
                     AuthPasswordField(
-                      label: 'Password',
+                      label: 'Password (at least 8 characters)',
                       hint: 'At least 8 characters',
                       controller: _passwordController,
                       validator: _validatePassword,
