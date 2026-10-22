@@ -14,6 +14,9 @@ import 'profile_screen.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/delete_confirm_dialog.dart';
 import '../widgets/undo_snackbar.dart';
+import '../services/list_service.dart';
+import '../widgets/list_switcher.dart';
+import '../widgets/new_list_dialog.dart';
 
 class TaskListScreen extends StatefulWidget {
   const TaskListScreen({super.key});
@@ -35,6 +38,38 @@ class _TaskListScreenState extends State<TaskListScreen> {
     if (sortOption != null) {
       context.read<TaskProvider>().setSort(sortOption);
     }
+  }
+
+  // updates the selected task list through the TaskProvider
+  void _onListSelected(String listId) {
+    context.read<TaskProvider>().selectList(listId);
+  }
+
+  // prompts the user for a list name and creates the list
+  Future<void> _createList() async {
+    final name = await NewListDialog.show(context);
+
+    // stop if the dialog was canceled or the widget is no longer active
+    if (name == null || !mounted) return;
+
+    try {
+      await context.read<TaskProvider>().createList(name);
+    } on ListException catch (e) {
+      // show a specific error message for expected list related errors
+      if (!mounted) return;
+      _showMessage(e.message);
+    } catch (_) {
+      // show a fallback message for unexpected errors
+      if (!mounted) return;
+      _showMessage('Unable to create the list. Please try again.');
+    }
+  }
+
+  // displays a message at the bottom of the screen using a snackbar
+  void _showMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
   }
 
   // Toggles a task's isDone state and updates the UI.
