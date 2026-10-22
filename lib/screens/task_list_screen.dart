@@ -155,30 +155,32 @@ class _TaskListScreenState extends State<TaskListScreen> {
 
             // Scrollable task area
             Expanded(
-              child: tasks.isEmpty
-                  ? const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 25),
-                      child: Align(
-                        alignment: Alignment(0.0, -0.4),
-                        child: EmptyState(),
+              child: provider.isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : tasks.isEmpty
+                    ? const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 25),
+                        child: Align(
+                          alignment: Alignment(0.0, -0.4),
+                          child: EmptyState(),
+                        ),
+                      )
+                    : ListView(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 8,
+                        ),
+                        children: tasks
+                            .map(
+                              (task) => TaskTile(
+                                task: task,
+                                onToggleDone: () => _toggleTaskDone(task.id),
+                                onEdit: () => _editTask(task),
+                                onDelete: () => _deleteTask(task),
+                              ),
+                            )
+                            .toList(),
                       ),
-                    )
-                  : ListView(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 8,
-                      ),
-                      children: tasks
-                          .map(
-                            (task) => TaskTile(
-                              task: task,
-                              onToggleDone: () => _toggleTaskDone(task.id),
-                              onEdit: () => _editTask(task),
-                              onDelete: () => _deleteTask(task),
-                            ),
-                          )
-                          .toList(),
-                    ),
             ),
           ],
         ),
