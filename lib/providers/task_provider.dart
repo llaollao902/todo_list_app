@@ -32,12 +32,6 @@ class TaskProvider extends ChangeNotifier {
   // True until the first batch of tasks arrives from Firestore.
   // The task list screen shows  a spinner while this is true
 
-  // task count per list id (personal + every collab list), so the
-  // list dropdown can show a count for all of them, not just the open one.
-  final Map<String, int> _taskCounts = {};
-  Map<String, int> get taskCounts => Map.unmodifiable(_taskCounts);
-  final Map<String, StreamSubscription<List<Task>>> _countSubscriptions = {};
-
   bool _isLoading = true;
   bool get isLoading => _isLoading;
 
@@ -96,7 +90,6 @@ class TaskProvider extends ChangeNotifier {
     _tasksSubscription = null;
     _listsSubscription?.cancel();
     _listsSubscription = null;
-    _cancelCountSubscriptions();
     _allTasks = [];
 
     // never carry one user's lists or selection over to the next user
@@ -119,48 +112,10 @@ class TaskProvider extends ChangeNotifier {
       // only this user's tasks are requested from firestore
       // subscribing to the new user's tasks
       _listenToLists(user.uid);
-      _syncCountSubscriptions(user.uid);
       _subscribeToTasks(user.uid);
     }
 
     notifyListeners();
-  }
-
-  // starts counting one list's tasks (no-op if already counting it)
-  void _watchCount(String uid, String listId) {
-    if (_countSubscriptions.containsKey(listId)) return;
-    _countSubscriptions[listId] = _taskService
-        .getTasks(uid, listId: listId)
-        .listen((tasks) {
-          _taskCounts[listId] = tasks.length;
-          notifyListeners();
-        }, onError: (_) {});
-  }
-
-  // keeps one counter per list the user belongs to, and drops counters
-  // for lists the user no longer belongs to
-  void _syncCountSubscriptions(String uid) {
-    _watchCount(uid, kPersonalListId);
-
-    final ids = _lists.map((l) => l.id).toSet();
-    final stale = _countSubscriptions.keys
-        .where((id) => id != kPersonalListId && !ids.contains(id))
-        .toList();
-    for (final id in stale) {
-      _countSubscriptions.remove(id)?.cancel();
-      _taskCounts.remove(id);
-    }
-    for (final id in ids) {
-      _watchCount(uid, id);
-    }
-  }
-
-  void _cancelCountSubscriptions() {
-    for (final sub in _countSubscriptions.values) {
-      sub.cancel();
-    }
-    _countSubscriptions.clear();
-    _taskCounts.clear();
   }
 
   // streams every collaborative list whose memberIds contains this user.
@@ -171,7 +126,6 @@ class TaskProvider extends ChangeNotifier {
         .listen(
           (lists) {
             _lists = lists;
-            _syncCountSubscriptions(uid);
             _streamError = null;
 
             // If the selected list is gone (deleted, or the user was removed),
@@ -392,7 +346,6 @@ class TaskProvider extends ChangeNotifier {
     _listsSubscription?.cancel();
     _authSubscription?.cancel();
     _deleteUndoTimer?.cancel();
-    _cancelCountSubscriptions();
     super.dispose();
   }
 }
