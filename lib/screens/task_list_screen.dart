@@ -6,7 +6,7 @@ import '../models/task.dart';
 import '../providers/task_provider.dart';
 import '../services/auth_service.dart';
 import '../utils/constants.dart';
-import '../widgets/filter_sort_sheet.dart'; 
+import '../widgets/filter_sort_sheet.dart';
 import '../widgets/list_header.dart';
 import '../widgets/task_tile.dart';
 import 'form_task_screen.dart';
@@ -27,7 +27,7 @@ class TaskListScreen extends StatefulWidget {
 }
 
 class _TaskListScreenState extends State<TaskListScreen> {
-    Future<void> _openFilterSheet() async {
+  Future<void> _openFilterSheet() async {
     final provider = context.read<TaskProvider>();
 
     final result = await FilterSortSheet.show(
@@ -100,9 +100,8 @@ class _TaskListScreenState extends State<TaskListScreen> {
 
   // displays a message at the bottom of the screen using a snackbar
   void _showMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 
   // Toggles a task's isDone state and updates the UI.
@@ -198,17 +197,15 @@ class _TaskListScreenState extends State<TaskListScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                                    _buildHeader(context),
+                  _buildHeader(context),
 
                   const SizedBox(height: 15),
                   ListSwitcher(
                     lists: provider.lists,
                     selectedListId: provider.selectedListId,
-                    taskCounts: provider.taskCounts,
                     onSelected: _onListSelected,
                     onNewList: _createList,
-                    onAddMember:
-                        provider.canManageMembers ? _addMember : null,
+                    onAddMember: provider.canManageMembers ? _addMember : null,
                   ),
                   const SizedBox(height: 15),
 
@@ -229,29 +226,29 @@ class _TaskListScreenState extends State<TaskListScreen> {
               child: provider.isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : tasks.isEmpty
-                    ? const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 25),
-                        child: Align(
-                          alignment: Alignment(0.0, -0.4),
-                          child: EmptyState(),
-                        ),
-                      )
-                    : ListView(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 8,
-                        ),
-                        children: tasks
-                            .map(
-                              (task) => TaskTile(
-                                task: task,
-                                onToggleDone: () => _toggleTaskDone(task.id),
-                                onEdit: () => _editTask(task),
-                                onDelete: () => _deleteTask(task),
-                              ),
-                            )
-                            .toList(),
+                  ? const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 25),
+                      child: Align(
+                        alignment: Alignment(0.0, -0.4),
+                        child: EmptyState(),
                       ),
+                    )
+                  : ListView(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 8,
+                      ),
+                      children: tasks
+                          .map(
+                            (task) => TaskTile(
+                              task: task,
+                              onToggleDone: () => _toggleTaskDone(task.id),
+                              onEdit: () => _editTask(task),
+                              onDelete: () => _deleteTask(task),
+                            ),
+                          )
+                          .toList(),
+                    ),
             ),
           ],
         ),

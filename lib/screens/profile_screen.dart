@@ -56,8 +56,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _loadUsername() async {
     String? username;
     try {
-      await _authService.syncUsernameEmail();
-      username = await _authService.getUsernameForCurrentUser();
+      username = await _authService.syncUsernameEmail();
     } catch (_) {
       // Leave the profile with an empty username if the lookup is unavailable.
     }

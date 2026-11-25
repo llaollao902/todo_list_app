@@ -8,18 +8,16 @@ import '../utils/constants.dart';
 class ListSwitcher extends StatefulWidget {
   final List<TaskList> lists;
   final String selectedListId;
-  final Map<String, int> taskCounts; // list id -> task count
   final ValueChanged<String> onSelected;
   final VoidCallback onNewList;
 
   // null = hide the button (not the owner / Personal)
-  final VoidCallback? onAddMember; 
+  final VoidCallback? onAddMember;
 
   const ListSwitcher({
     super.key,
     required this.lists,
     required this.selectedListId,
-    required this.taskCounts,
     required this.onSelected,
     required this.onNewList,
     this.onAddMember,
@@ -41,11 +39,8 @@ class _ListSwitcherState extends State<ListSwitcher> {
     return 'Personal';
   }
 
-  String _countLabel(int count) => count == 1 ? '1 task' : '$count tasks';
-
-    PopupMenuItem<String> _menuItem(String id, String label) {
+  PopupMenuItem<String> _menuItem(String id, String label) {
     final selected = id == widget.selectedListId;
-    final count = widget.taskCounts[id] ?? 0;
     return PopupMenuItem<String>(
       value: id,
       height: 44,
@@ -61,14 +56,6 @@ class _ListSwitcherState extends State<ListSwitcher> {
                 fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                 color: AppColors.heading,
               ),
-            ),
-          ),
-          const SizedBox(width: 16),
-          Text(
-            _countLabel(count),
-            style: const TextStyle(
-              fontSize: 11,
-              color: AppColors.tagBadgeText,
             ),
           ),
         ],
@@ -143,10 +130,7 @@ class _ListSwitcherState extends State<ListSwitcher> {
         GestureDetector(
           onTap: widget.onNewList,
           child: CustomPaint(
-            painter: _DashedBorderPainter(
-              color: AppColors.subtext,
-              radius: 20,
-            ),
+            painter: _DashedBorderPainter(color: AppColors.subtext, radius: 20),
             child: const Padding(
               padding: EdgeInsets.symmetric(horizontal: 14, vertical: 9),
               child: Row(
