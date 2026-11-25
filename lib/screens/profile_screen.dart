@@ -9,7 +9,6 @@ import '../widgets/auth_form/auth_submit_button.dart';
 import '../widgets/auth_form/auth_text_field.dart';
 import '../widgets/profile/profile_avatar_header.dart';
 import '../widgets/profile/section_header.dart';
-import 'task_list_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key, this.onBackToTasks});
@@ -59,8 +58,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       await _authService.syncUsernameEmail();
       username = await _authService.getUsernameForCurrentUser();
-    } catch (e) {
-      debugPrint('syncUsernameEmail failed: $e');
+    } catch (_) {
+      // Leave the profile with an empty username if the lookup is unavailable.
     }
 
     if (!mounted) return;
