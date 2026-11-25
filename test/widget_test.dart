@@ -5,26 +5,21 @@
 // gestures. You can also use WidgetTester to find child widgets in the widget
 // tree, read text, and verify that the values of widget properties are correct.
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:todo_list_app/main.dart';
+import 'package:todo_list_app/services/auth_service.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  group('username validation', () {
+    test('accepts usernames case-insensitively after trimming', () {
+      expect(AuthService.isValidUsername('  Maya_Lin  '), isTrue);
+    });
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
-
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
-
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    test('rejects usernames outside the allowed format', () {
+      expect(AuthService.isValidUsername('ab'), isFalse);
+      expect(AuthService.isValidUsername('maya lin'), isFalse);
+      expect(AuthService.isValidUsername('maya.lin'), isFalse);
+      expect(AuthService.isValidUsername('this_username_is_too_long'), isFalse);
+    });
   });
 }

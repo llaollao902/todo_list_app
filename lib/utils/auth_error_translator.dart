@@ -1,0 +1,38 @@
+import 'package:firebase_auth/firebase_auth.dart';
+
+// Converts Firebase's raw error codes into plain-English messages
+class AuthErrorTranslator {
+  static String translate(FirebaseAuthException e) {
+    switch (e.code) {
+      // Sign up specific
+      case 'email-already-in-use':
+        return 'An account already exists for that email address.';
+      case 'weak-password':
+        return 'That password is too weak. Use at least 8 characters.';
+      case 'invalid-email':
+        return 'That email address doesn\'t look valid.';
+      case 'operation-not-allowed':
+        return 'Email/password accounts are currently disabled.';
+
+      // Sign-in specific
+      case 'user-not-found':
+        return 'No account found for that username or email address.';
+      case 'wrong-password':
+        return 'Incorrect password. Please try again.';
+      case 'invalid-credential':
+        return 'Username/email or password is incorrect. Please try again.';
+      case 'invalid-username':
+        return 'Use a username with 3-20 letters, numbers, or underscores.';
+      case 'username-already-in-use':
+        return 'That username is already taken. Please choose another.';
+      case 'user-disabled':
+        return 'This account has been disabled.';
+      case 'too-many-requests':
+        return 'Too many attempts. Please wait a moment and try again.';
+
+      // --- Fallback for anything unexpected ---
+      default:
+        return 'Something went wrong. Please try again.';
+    }
+  }
+}
