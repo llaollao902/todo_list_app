@@ -78,20 +78,8 @@ class ListService {
     final uid = await _resolveUid(identifier);
 
     final ref = _lists.doc(listId);
-    final snapshot = await ref.get();
-    if (!snapshot.exists) {
-      throw const ListException('That list no longer exists.');
-    }
-    final members = List<String>.from(
-      snapshot.data()?['memberIds'] ?? const [],
-    );
-
-    // check if the user is already a member of the list
-    if (members.contains(uid)) {
-      throw const ListException('That user is already in this list.');
-    }
-
-    // atomically add the new user's uid to the memberIds array in firestore
+    // One atomic write; arrayUnion is idempotent, and Firestore rules verify
+    // owner membership server-side.
     await ref.update({
       'memberIds': FieldValue.arrayUnion([uid]),
     });
