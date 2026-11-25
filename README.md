@@ -24,8 +24,8 @@ This is the merged result of Activity 1 (CRUD To-Do List) and Activity 2
 - Live updates through Firestore snapshots.
 - **Personal list:** tasks only the owner can see or change.
 - **Collaborative lists:** create a list, switch between lists from a dropdown
-  (each shows its task count), and add members by username or email (owner
-  only). A user sees only the lists they own or were added to.
+  and add members by username or email (owner only). A user sees only the lists
+  they own or were added to.
 
 ## Technology
 
@@ -37,11 +37,71 @@ This is the merged result of Activity 1 (CRUD To-Do List) and Activity 2
 - **Authorization:** Firestore Security Rules (`firestore.rules`).
 - **Other packages:** `intl` for date formatting.
 
+## Backend and Database Refactor
+
+There is no custom REST API or application server. Flutter calls Firebase
+Authentication and Cloud Firestore through their client SDKs. Firestore
+Security Rules run with the database and enforce authorization and data shape
+for every client request.
+
+### Architecture and request flow
+
+```mermaid
+flowchart LR
+  UI[Flutter screens and widgets] --> P[TaskProvider]
+  P --> TS[TaskService]
+  P --> LS[ListService]
+  TS --> FS[(Cloud Firestore)]
+  LS --> FS
+  AG[AuthGate] --> FA[Firebase Authentication]
+  AS[AuthService] --> FA
+  AS --> FS
+  FR[Firestore Security Rules] -. authorize .-> FS
+```
+
+- `AuthGate` observes Firebase Auth state and routes signed-in users to the
+  task list; signed-out users see sign-in.
+- `TaskProvider` owns the current user's task/list streams and screen state.
+  `TaskService` and `ListService` isolate Firestore queries and writes from UI
+  widgets.
+- `AuthService` handles account operations and the Firestore username mapping.
+- Firestore rules are the authorization boundary. Client-side checks improve
+  usability but do not grant access.
+
+### What the refactor changed
+
+| Area | Refactored implementation | Why it matters |
+| --- | --- | --- |
+| Task ownership | Personal tasks are queried by both `ownerId` and `listId`; the Firestore SDK generates new task IDs and `TaskService` sets `ownerId` from the signed-in user. Rules independently require `ownerId == request.auth.uid`. | Avoids loading the whole collection and blocks a modified client from assigning another user's ownership ID. |
+| Shared tasks | Collaborative task queries are scoped to one selected list; rules check that the user is a member. | Limits reads to the active list and enforces membership on the database. |
+| Live data | One task stream is subscribed to for the active list. The previous per-list task-count listeners were removed. | Reduces duplicate listeners and reads while keeping task changes live. |
+| Account switching | On auth changes, `TaskProvider` cancels old subscriptions and clears prior tasks, lists, selection, filters, and undo state before loading the new account. | Prevents stale state from one signed-in account appearing after another account signs in. |
+| Task writes | Updates write only editable fields; `ownerId` and `listId` stay unchanged. Firestore rules validate the complete task shape and field values. | Preserves ownership and prevents malformed or unexpected task data. |
+| Membership | The owner adds members with Firestore `arrayUnion`; rules restrict list updates to the owner. | Makes a member addition atomic and prevents non-owners from editing membership. |
+| Username registration | Username availability is checked and the username mapping is written in a Firestore transaction. A failed username setup triggers cleanup of the newly created Auth account. | Avoids duplicate usernames and reduces the chance of a partially registered account. |
+| UI filtering and sorting | Tag/priority filters and sort order are applied to the active task data in `TaskProvider`. | Changing a filter does not require another Firestore query or listener. |
+| Delete undo | A deleted task is retained briefly for the four-second undo action, then permanently deleted unless restored. | Keeps undo behavior in provider state while the database remains the source of truth. |
+
+### Data flow for a task
+
+1. Firebase Authentication identifies the signed-in user.
+2. `TaskProvider` subscribes to that user's personal tasks and collaborative
+   lists. Selecting a collaborative list replaces the active task
+   subscription.
+3. Screens call provider methods for create, update, completion, delete, and
+   undo actions; they do not write directly to Firestore.
+4. `TaskService` performs the Firestore operation. Firestore checks the
+   request against `firestore.rules` before accepting it.
+5. Firestore snapshots update provider state, and Provider notifies the
+   listening widgets to rebuild.
+
 ---
 
-## How Activity 1 and Activity 2 Were Merged
+## How the Activities Were Combined
 
-Basically, there were no merge conflicts because each new activity branch was created from the previous activity branch instead of from `main`. For example, after implementing the CRUD functionality for Activity 1, I created a new branch, `act2-accounts`, while retaining all the progress from Activity 1. Then, when I started Activity 3, I created the `act3-ubac` branch while still on `act2-accounts`. This way, each new branch builds on top of the previous activity's progress without merging the branches into `main` after every activity.
+The work was developed in activity branches, with account management and
+user-based access control integrated with the earlier CRUD implementation.
+`main` was not developed on directly.
 
 **Branch strategy**
 
@@ -53,30 +113,16 @@ Basically, there were no merge conflicts because each new activity branch was cr
 
 `main` was not developed on directly.
 
-**What changed when merging**
+**Integration points**
 
-- `AuthGate` in `main.dart` now sends signed-in users straight to
-  `TaskListScreen`, and everyone else to `SignInScreen`.
-- `Task` gained `ownerId` and `listId`. Existing task code that assumed one
-  global task collection was updated.
-- `TaskService.getTasks()` no longer reads the whole collection. It filters by
-  the signed-in user (personal) or by list (collaborative).
-- `TaskService.addTask()` lets Firestore generate the document ID and stamps
-  `ownerId` from `FirebaseAuth.instance.currentUser`, so a client cannot choose
-  another user's ID.
-- `TaskProvider` listens to `authStateChanges()` and, on every sign-in or
-  sign-out, cancels the previous user's streams and clears tasks, lists,
-  filters, and undo state so one user's data never carries over to the next.
-- `firestore.rules` replaced the old `allow read, write: if true` with
-  ownership and membership rules.
-- The README was rewritten (this file).
-
-
-- `main.dart`: both branches defined `home`. Kept the Activity 2 `AuthGate`
-  and the Activity 1 `ChangeNotifierProvider`, combined.
-- `task_list_screen.dart`: added the log-out and profile actions from
-  Activity 2 to the Activity 1 screen.
-- `README.md` and `firestore.rules`: kept the new versions from this branch.
+- `AuthGate` routes signed-in users to `TaskListScreen` and signed-out users
+  to `SignInScreen`.
+- `ChangeNotifierProvider` creates the shared `TaskProvider` above the app's
+  screens.
+- The task-list screen combines CRUD actions with profile and sign-out
+  controls.
+- The task model and services support both personal and collaborative lists;
+  the refactor and security sections above explain their data flow and rules.
 
 ---
 
@@ -98,25 +144,31 @@ erDiagram
 
 | Field | Type | Description |
 | --- | --- | --- |
-| `id` | string | Document ID (generated by Firestore) |
-| `ownerId` | string | UID of the user who created the task |
-| `listId` | string | `personal`, or the ID of a collaborative list |
-| `title` | string | Task title (required) |
-| `dueDateTime` | timestamp | Due date and time |
-| `createdAt` | timestamp | Creation time |
-| `priority` | string | `low`, `medium`, or `high` |
-| `tag` | string | `school`, `personal`, or `others` |
-| `isDone` | boolean | Whether the task is complete |
+| `id` | string | Must match the Firestore document ID; the app uses an SDK-generated ID. |
+| `ownerId` | string | UID of the user who created the task; set from the signed-in account on create. |
+| `listId` | string | `personal`, or the ID of a collaborative list. |
+| `title` | string | Required; 1-200 characters. |
+| `dueDateTime` | timestamp | Due date and time. |
+| `createdAt` | timestamp | Creation time. |
+| `priority` | string | Required enum: `low`, `medium`, or `high`. |
+| `tag` | string | Required enum: `school`, `personal`, or `others`. |
+| `isDone` | boolean | Whether the task is complete. |
 
 ### `lists/{listId}`
 
 | Field | Type | Description |
 | --- | --- | --- |
-| `id` | string | Document ID |
-| `name` | string | List name (1 to 60 characters) |
-| `ownerId` | string | UID of the creator; never changes |
-| `memberIds` | list of strings | UIDs allowed in the list; always includes the owner |
-| `createdAt` | timestamp | Creation time |
+| `id` | string | Must match the Firestore document ID. |
+| `name` | string | Required; 1-60 characters. |
+| `ownerId` | string | UID of the creator; cannot be changed. |
+| `memberIds` | list of strings | The app stores member UIDs; maximum 50 and always includes the owner. Rules check the list and its size but not each element's type. |
+| `createdAt` | timestamp | Creation time. |
+
+Task and list documents must contain all the fields shown above and no
+additional fields. The Firestore rules validate the document ID, required
+fields, top-level value types, and the listed length/enum constraints. For
+`memberIds`, the rule checks that the value is a list and limits its size; the
+app writes UID strings as the list entries.
 
 The **Personal** list is not a document. It is any task with
 `listId == 'personal'` and `ownerId == <your uid>`.
@@ -128,12 +180,113 @@ The **Personal** list is not a document. It is any task with
 | `uid` | string | Firebase Auth UID of the account |
 | `email` | string | Account email, so a username can be resolved to an email at sign-in |
 
-Usernames are 3 to 20 lowercase letters, digits, or underscores. This is the
-only intentional denormalization (the email also exists in Auth).
-`AuthService.syncUsernameEmail()` keeps it in step after an email change.
+The document ID is the normalized username: 3-20 lowercase letters, digits,
+or underscores. The document contains only `uid` and `email`; the email is
+also maintained in Firebase Authentication. `AuthService.syncUsernameEmail()`
+keeps it in step after an email change.
 
 Tasks and lists store only UIDs, never names or emails, so user data is not
 duplicated inside task records.
+
+## Example API Endpoints (Database Access)
+
+This app does not have its own REST API server. The Flutter client connects
+directly to Firebase Authentication and Cloud Firestore using their SDKs. The
+paths below are Firestore collection/document paths, not standalone HTTP
+endpoints:
+
+| Purpose | Firestore path | SDK operation |
+| --- | --- | --- |
+| Create a task | `tasks/{newTaskId}` | `TaskService.addTask()` creates a document with a generated ID. |
+| Read personal tasks | `tasks` | Query by `ownerId == uid` and `listId == 'personal'`. |
+| Read shared-list tasks | `tasks` | Query by `listId == listId`; Firestore rules require list membership. |
+| Update or delete a task | `tasks/{taskId}` | `TaskService.updateTask()` or `deleteTask()`. |
+| Create a collaborative list | `lists/{newListId}` | `ListService.createList()` creates a document with a generated ID. |
+| Read the user's lists | `lists` | Query by `memberIds array-contains uid`. |
+| Add a list member | `lists/{listId}` | `ListService.addMember()` updates `memberIds` with `arrayUnion`. |
+| Resolve a username | `usernames/{username}` | Read the username document; email lookup uses a query on `usernames`. |
+
+The following example shows concrete Firebase SDK calls after a user signs in.
+In the app, `TaskService` wraps these task operations:
+
+```dart
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:todo_list_app/utils/constants.dart';
+
+Future<void> exampleTaskCrud() async {
+  final db = FirebaseFirestore.instance;
+  final uid = FirebaseAuth.instance.currentUser?.uid;
+  if (uid == null) throw StateError('Sign in first.');
+
+  // CREATE: tasks/{generatedTaskId}
+  final taskRef = db.collection('tasks').doc();
+  await taskRef.set({
+    'id': taskRef.id,
+    'ownerId': uid,
+    'listId': kPersonalListId,
+    'title': 'Finish lab report',
+    'dueDateTime': Timestamp.fromDate(DateTime(2026, 12, 1, 17)),
+    'createdAt': Timestamp.now(),
+    'priority': 'high',
+    'tag': 'school',
+    'isDone': false,
+  });
+
+  // READ: only this user's personal tasks.
+  final myTasks = await db
+      .collection('tasks')
+      .where('ownerId', isEqualTo: uid)
+      .where('listId', isEqualTo: kPersonalListId)
+      .get();
+  print('Found ${myTasks.docs.length} personal tasks.');
+
+  // UPDATE: change editable fields at tasks/{taskId}.
+  await db.collection('tasks').doc(taskRef.id).update({
+    'title': 'Submit lab report',
+    'isDone': true,
+  });
+
+  // DELETE: remove tasks/{taskId}.
+  await db.collection('tasks').doc(taskRef.id).delete();
+}
+```
+
+For collaborative lists, the app uses `ListService` and scopes task queries to
+the list ID:
+
+```dart
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:todo_list_app/services/list_service.dart';
+
+Future<void> exampleSharedList() async {
+  final listService = ListService();
+  final list = await listService.createList('Project team');
+
+  // Only the list owner can add a member.
+  await listService.addMember(
+    listId: list.id,
+    identifier: 'teammate_username',
+  );
+
+  // The caller must be a member; Firestore rules enforce this as well.
+  final sharedTasks = await FirebaseFirestore.instance
+      .collection('tasks')
+      .where('listId', isEqualTo: list.id)
+      .get();
+  print('Found ${sharedTasks.docs.length} shared tasks.');
+}
+```
+
+Authentication examples: `AuthService.signUp(...)` creates a Firebase Auth
+account and its unique `usernames/{username}` mapping;
+`signInWithIdentifierAndPassword(...)` accepts either a username or email;
+`sendPasswordResetEmailForIdentifier(...)` sends a reset email. These are SDK
+operations, not routes hosted by this app.
+
+Firebase Authentication handles account operations through its SDK. Firestore
+Security Rules authorize database reads and writes for both the app and direct
+client requests; the UI is not the security boundary.
 
 ### How they relate
 
@@ -245,6 +398,15 @@ ID shown by `flutter devices`. Run the widget tests with:
 ```bash
 flutter test
 ```
+
+## Install the Android APK
+
+Download it from
+the shared Google Drive folder:
+
+**APK download:** [Google Drive APK folder](https://drive.google.com/drive/folders/REPLACE_WITH_YOUR_FOLDER_ID)
+
+If prompted, allow the browser or file manager to **install unknown apps**, then confirm the installation. 
 
 ### Firebase setup
 
