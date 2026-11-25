@@ -1,10 +1,13 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
+
 import '../models/task.dart';
 import '../models/task_list.dart';
 import '../services/list_service.dart';
 import '../services/task_service.dart';
 import '../utils/constants.dart';
+
 import 'package:firebase_auth/firebase_auth.dart';
 
 // ChangeNotifier is Flutter's built-in "observable" class.
@@ -13,10 +16,12 @@ import 'package:firebase_auth/firebase_auth.dart';
 // core mechanic behind the Provider package.
 class TaskProvider extends ChangeNotifier {
   final TaskService _taskService = TaskService();
-  final ListService _listService = ListService(); 
+  final ListService _listService = ListService();
 
   // UID of the signed-in user (null when signed out).
-  String? _uid;
+  String? _currentUserId;
+  String? _streamError;
+  String? get streamError => _streamError;
 
   // --- Raw data from Firestore ---
   // This is the FULL list of tasks, unfiltered. We keep it separate
@@ -57,13 +62,13 @@ class TaskProvider extends ChangeNotifier {
   // Only the owner of a collaborative list may add members.
   bool get canManageMembers {
     final list = selectedList;
-    return list != null && list.ownerId == _uid;
+    return list != null && list.ownerId == _currentUserId;
   }
 
   // Holds the subscription to the Firestore stream so we can cancel
   // it later (in dispose()) and avoid memory leaks.
   StreamSubscription<List<Task>>? _tasksSubscription;
-  StreamSubscription<List<TaskList>>? _listsSubscription; 
+  StreamSubscription<List<TaskList>>? _listsSubscription;
   StreamSubscription<User?>? _authSubscription;
 
   // --- Filter/sort state ---
@@ -80,27 +85,29 @@ class TaskProvider extends ChangeNotifier {
 
   TaskProvider() {
     // Re-run whenever someone signs in or out
-    _authSubscription =
-        FirebaseAuth.instance.authStateChanges().listen(_onAuthChanged);
+    _authSubscription = FirebaseAuth.instance.authStateChanges().listen(
+      _onAuthChanged,
+    );
   }
 
   void _onAuthChanged(User? user) {
     // Drop the previous user's stream and data immediately
     _tasksSubscription?.cancel();
     _tasksSubscription = null;
-    _listsSubscription?.cancel(); 
-    _listsSubscription = null; 
+    _listsSubscription?.cancel();
+    _listsSubscription = null;
     _cancelCountSubscriptions();
     _allTasks = [];
 
     // never carry one user's lists or selection over to the next user
     _lists = [];
     _selectedListId = kPersonalListId;
-    _uid = user?.uid;
+    _currentUserId = user?.uid;
+    _streamError = null;
 
     // don't carry one user's undo state or filters over to the next user
     _deleteUndoTimer?.cancel();
-    _recentlyDeletedTask =null;
+    _recentlyDeletedTask = null;
     selectedTagFilter = null;
     selectedPriorityFilter = null;
     selectedSort = 'Date added';
@@ -111,9 +118,9 @@ class TaskProvider extends ChangeNotifier {
     if (user != null) {
       // only this user's tasks are requested from firestore
       // subscribing to the new user's tasks
-      _listenToLists(user.uid); 
+      _listenToLists(user.uid);
       _syncCountSubscriptions(user.uid);
-      _subscribeToTasks(user.uid); 
+      _subscribeToTasks(user.uid);
     }
 
     notifyListeners();
@@ -122,14 +129,12 @@ class TaskProvider extends ChangeNotifier {
   // starts counting one list's tasks (no-op if already counting it)
   void _watchCount(String uid, String listId) {
     if (_countSubscriptions.containsKey(listId)) return;
-    _countSubscriptions[listId] =
-        _taskService.getTasks(uid, listId: listId).listen(
-      (tasks) {
-        _taskCounts[listId] = tasks.length;
-        notifyListeners();
-      },
-      onError: (Object e) => debugPrint('Count stream error ($listId): $e'),
-    );
+    _countSubscriptions[listId] = _taskService
+        .getTasks(uid, listId: listId)
+        .listen((tasks) {
+          _taskCounts[listId] = tasks.length;
+          notifyListeners();
+        }, onError: (_) {});
   }
 
   // keeps one counter per list the user belongs to, and drops counters
@@ -161,24 +166,28 @@ class TaskProvider extends ChangeNotifier {
   // streams every collaborative list whose memberIds contains this user.
   // Lists the user was NOT added to are never returned.
   void _listenToLists(String uid) {
-    _listsSubscription = _listService.getMyLists(uid).listen(
-      (lists) {
-        _lists = lists;
-        _syncCountSubscriptions(uid);
+    _listsSubscription = _listService
+        .getMyLists(uid)
+        .listen(
+          (lists) {
+            _lists = lists;
+            _syncCountSubscriptions(uid);
+            _streamError = null;
 
-        // If the selected list is gone (deleted, or the user was removed),
-        // fall back to Personal instead of showing a dead list.
-        if (!isPersonalSelected && selectedList == null) {
-          _selectedListId = kPersonalListId;
-          _subscribeToTasks(uid);
-        }
+            // If the selected list is gone (deleted, or the user was removed),
+            // fall back to Personal instead of showing a dead list.
+            if (!isPersonalSelected && selectedList == null) {
+              _selectedListId = kPersonalListId;
+              _subscribeToTasks(uid);
+            }
 
-        notifyListeners();
-      },
-      onError: (Object error) {
-        debugPrint('List stream error: $error');
-      },
-    );
+            notifyListeners();
+          },
+          onError: (_) {
+            _streamError = 'Could not load your lists.';
+            notifyListeners();
+          },
+        );
   }
 
   // (re)subscribes to the tasks of the selected list. This is the
@@ -189,26 +198,28 @@ class TaskProvider extends ChangeNotifier {
     _allTasks = [];
     _isLoading = true;
 
-    _tasksSubscription =
-        _taskService.getTasks(uid, listId: _selectedListId).listen(
-      (tasks) {
-        _allTasks = tasks;
-        _isLoading = false;
-        notifyListeners();
-      },
-      onError: (Object error) {
-        debugPrint('Task stream error: $error');
-        _isLoading = false;
-        notifyListeners();
-      },
-    );
+    _tasksSubscription = _taskService
+        .getTasks(uid, listId: _selectedListId)
+        .listen(
+          (tasks) {
+            _allTasks = tasks;
+            _isLoading = false;
+            _streamError = null;
+            notifyListeners();
+          },
+          onError: (_) {
+            _isLoading = false;
+            _streamError = 'Could not load tasks.';
+            notifyListeners();
+          },
+        );
   }
 
   // --- switching and managing lists ---
 
   // Pass kPersonalListId for Personal, or a collaborative list's id.
   void selectList(String listId) {
-    final uid = _uid;
+    final uid = _currentUserId;
     if (uid == null || listId == _selectedListId) return;
 
     // Ignore ids of lists this user does not belong to.
@@ -257,7 +268,9 @@ class TaskProvider extends ChangeNotifier {
 
     // Apply priority filter, if one is selected.
     if (selectedPriorityFilter != null) {
-      result = result.where((t) => t.priority == selectedPriorityFilter).toList();
+      result = result
+          .where((t) => t.priority == selectedPriorityFilter)
+          .toList();
     }
 
     // Apply sorting based on the selected option.
@@ -276,7 +289,9 @@ class TaskProvider extends ChangeNotifier {
         break;
       case 'Date added':
       default:
-        result.sort((a, b) => b.createdAt.compareTo(a.createdAt)); // newest first
+        result.sort(
+          (a, b) => b.createdAt.compareTo(a.createdAt),
+        ); // newest first
         break;
     }
 
@@ -374,7 +389,7 @@ class TaskProvider extends ChangeNotifier {
   @override
   void dispose() {
     _tasksSubscription?.cancel();
-    _listsSubscription?.cancel(); 
+    _listsSubscription?.cancel();
     _authSubscription?.cancel();
     _deleteUndoTimer?.cancel();
     _cancelCountSubscriptions();
