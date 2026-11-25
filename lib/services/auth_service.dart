@@ -9,32 +9,19 @@ class AuthService {
   // Returns the signed-in user, or `null` when no user is signed in.
   User? get currentUser => _firebaseAuth.currentUser;
 
-  Future<String?> getUsernameForCurrentUser() async {
-    final user = currentUser;
-    if (user == null) return null;
-
-    final usernames = await _firestore
-        .collection('usernames')
-        .where('uid', isEqualTo: user.uid)
-        .limit(1)
-        .get();
-
-    return usernames.docs.isEmpty ? null : usernames.docs.first.id;
-  }
-
   // Keeps usernames/{username}.email in step with the email in Firebase Auth.
   // verifyBeforeUpdateEmail only changes the Auth email after the user clicks
   // the verification link, so we compare and fix it later, when the user is
   // back in the app
 
-  Future<void> syncUsernameEmail() async {
+  Future<String?> syncUsernameEmail() async {
     var user = currentUser;
-    if (user == null) return;
+    if (user == null) return null;
 
     // pull the latest auth data so user.email reflects a verified change.
     await user.reload();
     user = currentUser;
-    if (user == null || user.email == null) return;
+    if (user == null || user.email == null) return null;
 
     // refresh the id token so any rule that reads request.auth.token.email
     // sees the new address, not the old one
@@ -46,13 +33,14 @@ class AuthService {
         .limit(1)
         .get();
     if (snap.docs.isEmpty) {
-      return;
+      return null;
     }
 
     final doc = snap.docs.first;
     if (doc.data()['email'] != user.email) {
       await doc.reference.update({'email': user.email});
     }
+    return doc.id;
   }
 
   Future<void> updateUsername({
