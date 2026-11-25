@@ -59,10 +59,13 @@ class TaskService {
   }
 
   Future<void> updateTask(Task task) async {
-    await _firestore
-        .collection(_tasksCollection)
-        .doc(task.id)
-        .set(task.toMap(), SetOptions(merge: true));
+    await _firestore.collection(_tasksCollection).doc(task.id).update({
+      'title': task.title,
+      'dueDateTime': Timestamp.fromDate(task.dueDateTime),
+      'priority': task.priority.name,
+      'tag': task.tag.name,
+      'isDone': task.isDone,
+    });
   }
 
   Future<void> deleteTask(String id) async {
