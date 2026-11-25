@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart';
 
 // Provides access to the app's Firebase Authentication state.
 class AuthService {
@@ -42,22 +41,17 @@ class AuthService {
     await user.getIdToken(true);
 
     final snap = await _firestore
-      .collection('usernames')
-      .where('uid', isEqualTo: user.uid)
-      .limit(1)
-      .get();
+        .collection('usernames')
+        .where('uid', isEqualTo: user.uid)
+        .limit(1)
+        .get();
     if (snap.docs.isEmpty) {
-      debugPrint('syncUsernameEmail: no usernames doc for ${user.uid}');
       return;
     }
 
     final doc = snap.docs.first;
-    debugPrint('syncUsernameEmail: auth=${user.email} '
-        'firestore=${doc.data()['email']}');
-
     if (doc.data()['email'] != user.email) {
       await doc.reference.update({'email': user.email});
-      debugPrint('syncUsernameEmail: updated');
     }
   }
 
@@ -115,7 +109,7 @@ class AuthService {
     // If the identifier contains an '@', treat it as an email address.
     final email = await _resolveEmailForIdentifier(identifier);
 
-    final credential =  await _firebaseAuth.signInWithEmailAndPassword(
+    final credential = await _firebaseAuth.signInWithEmailAndPassword(
       email: email,
       password: password,
     );
@@ -123,8 +117,8 @@ class AuthService {
     // a failed sync must never block the user from signing in.
     try {
       await syncUsernameEmail();
-    } catch (e) {
-      debugPrint('syncUsernameEmail failed: $e');
+    } catch (_) {
+      // Sign-in remains successful when the optional profile sync fails.
     }
 
     return credential;
@@ -198,7 +192,7 @@ class AuthService {
         if (existingUsername.exists) {
           throw FirebaseAuthException(code: 'username-already-in-use');
         }
-        
+
         // If the username is available, create it and associate it with the new user's UID and email.
         transaction.set(usernameRef, {'uid': user.uid, 'email': user.email});
       });
