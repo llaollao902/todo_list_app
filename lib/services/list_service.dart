@@ -4,7 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../models/task_list.dart';
 import 'auth_service.dart';
 
-// a user-facing erro with a message that is safe to show in the UI
+// A user-facing error with a message that is safe to show in the UI.
 class ListException implements Exception {
   final String message;
   const ListException(this.message);
@@ -14,14 +14,14 @@ class ListException implements Exception {
 }
 
 class ListService {
-  // firestore instance reference
+  // Firestore instance reference.
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // shortcut getter for the 'lists' collection
+  // Shortcut getter for the 'lists' collection.
   CollectionReference<Map<String, dynamic>> get _lists =>
       _firestore.collection('lists');
 
-  // gets the current authenticated user's ID or throws if not signed in
+  // Gets the current authenticated user's ID or throws if not signed in.
   String get _currentUid {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
@@ -33,10 +33,9 @@ class ListService {
   // every collab list the user belongs to (owned or added to).
   // lists whose memberIds do not contain this uid are never returned
   Stream<List<TaskList>> getMyLists(String uid) {
-    return _lists
-        .where('memberIds', arrayContains: uid)
-        .snapshots()
-        .map((snapshot) {
+    return _lists.where('memberIds', arrayContains: uid).snapshots().map((
+      snapshot,
+    ) {
       // map firestore documents to tasklist objects
       final lists = snapshot.docs
           .map((doc) => TaskList.fromMap({...doc.data(), 'id': doc.id}))
@@ -56,7 +55,7 @@ class ListService {
 
     final uid = _currentUid;
     // auto generates a new firestore document id
-    final ref = _lists.doc();  
+    final ref = _lists.doc();
     final list = TaskList(
       id: ref.id,
       name: trimmed,
@@ -80,7 +79,12 @@ class ListService {
 
     final ref = _lists.doc(listId);
     final snapshot = await ref.get();
-    final members = List<String>.from(snapshot.data()?['memberIds'] ?? const []);
+    if (!snapshot.exists) {
+      throw const ListException('That list no longer exists.');
+    }
+    final members = List<String>.from(
+      snapshot.data()?['memberIds'] ?? const [],
+    );
 
     // check if the user is already a member of the list
     if (members.contains(uid)) {

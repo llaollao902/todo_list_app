@@ -6,14 +6,13 @@ import '../utils/constants.dart';
 
 class TaskService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final String _collectionName = 'tasks';
+  static const String _tasksCollection = 'tasks';
 
-  // The UID of whoever is signed in right now. 
+  // The UID of whoever is signed in right now.
   // New tasks get this as ownerId.
 
   // getter that returns a String representing the current user's ID
   String get _currentUid {
-
     // get the current user instance from Firebase Auth
     final user = FirebaseAuth.instance.currentUser;
 
@@ -32,48 +31,47 @@ class TaskService {
   // Personal: only my own tasks that are in the personal list
   // Collab: every task in that list (the rules check the membership)
   // streams personal tasks or collaborative list tasks in real-time
-  Stream<List<Task>> getTasks(
-    String ownerId, {
-    String listId = kPersonalListId,
-  }) {
+  Stream<List<Task>> getTasks(String uid, {String listId = kPersonalListId}) {
     // query personal task if matching ID, otherwise query the collab list
     final Query<Map<String, dynamic>> query = listId == kPersonalListId
         ? _firestore
-            .collection(_collectionName)
-            .where('ownerId', isEqualTo: ownerId)
-            .where('listId', isEqualTo: kPersonalListId)
+              .collection(_tasksCollection)
+              .where('ownerId', isEqualTo: uid)
+              .where('listId', isEqualTo: kPersonalListId)
         : _firestore
-            .collection(_collectionName)
-            .where('listId', isEqualTo: listId);
+              .collection(_tasksCollection)
+              .where('listId', isEqualTo: listId);
 
     // map firestore snapshot documents to a List<Task>
-    return query.snapshots().map((snapshot) => snapshot.docs
-        .map((doc) => Task.fromMap({...doc.data(), 'id': doc.id}))
-        .toList());
+    return query.snapshots().map(
+      (snapshot) => snapshot.docs
+          .map((doc) => Task.fromMap({...doc.data(), 'id': doc.id}))
+          .toList(),
+    );
   }
 
   Future<void> addTask(Task task) async {
-    // Let Firestore generate the document ID so it can 
+    // Let Firestore generate the document ID so it can
     // never collide with another user's task
-    final ref = _firestore.collection(_collectionName).doc();
+    final ref = _firestore.collection(_tasksCollection).doc();
     final owned = task.copyWith(id: ref.id, ownerId: _currentUid);
     await ref.set(owned.toMap());
   }
 
   Future<void> updateTask(Task task) async {
     await _firestore
-        .collection(_collectionName)
+        .collection(_tasksCollection)
         .doc(task.id)
         .set(task.toMap(), SetOptions(merge: true));
   }
 
   Future<void> deleteTask(String id) async {
-    await _firestore.collection(_collectionName).doc(id).delete();
+    await _firestore.collection(_tasksCollection).doc(id).delete();
   }
 
   Future<void> restoreTask(Task task) async {
     await _firestore
-        .collection(_collectionName)
+        .collection(_tasksCollection)
         .doc(task.id)
         .set(task.toMap(), SetOptions(merge: true));
   }
