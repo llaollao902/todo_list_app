@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../models/task.dart';
 import '../../utils/constants.dart';
 import 'task_form_decoration.dart';
 import 'task_title_field.dart';
@@ -25,17 +24,11 @@ class TaskOptionsRow extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Expanded(
-          child: _PriorityField(
-            value: priority,
-            onChanged: onPriorityChanged,
-          ),
+          child: _PriorityField(value: priority, onChanged: onPriorityChanged),
         ),
         const SizedBox(width: 16),
         Expanded(
-          child: _TagField(
-            value: tag,
-            onChanged: onTagChanged,
-          ),
+          child: _TagField(value: tag, onChanged: onTagChanged),
         ),
       ],
     );
@@ -46,10 +39,7 @@ class _PriorityField extends StatelessWidget {
   final Priority value;
   final ValueChanged<Priority?> onChanged;
 
-  const _PriorityField({
-    required this.value,
-    required this.onChanged,
-  });
+  const _PriorityField({required this.value, required this.onChanged});
 
   @override
   Widget build(BuildContext context) {
@@ -92,10 +82,7 @@ class _TagField extends StatelessWidget {
   final TaskTag value;
   final ValueChanged<TaskTag?> onChanged;
 
-  const _TagField({
-    required this.value,
-    required this.onChanged,
-  });
+  const _TagField({required this.value, required this.onChanged});
 
   @override
   Widget build(BuildContext context) {
