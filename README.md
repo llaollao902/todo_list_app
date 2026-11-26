@@ -404,7 +404,7 @@ flutter test
 Download it from
 the shared Google Drive folder:
 
-**APK download:** [Google Drive APK folder](https://drive.google.com/drive/folders/REPLACE_WITH_YOUR_FOLDER_ID)
+**APK download:** [Google Drive APK folder](https://drive.google.com/drive/folders/1UuKyhHmLlbTKRMYy0Edf7JCaUkaCoBnl)
 
 If prompted, allow the browser or file manager to **install unknown apps**, then confirm the installation. 
 
